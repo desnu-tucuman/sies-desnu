@@ -3,7 +3,7 @@ import "server-only";
 import { filterAndSortAcademicOffers, type AcademicOfferQuery } from "@/domain/academic-offer";
 import { getAcademicOfferDataset } from "@/server/services/academic-offer-service";
 import { createExcelCsv } from "./csv-export-service";
-import { createAcademicOffersPdf } from "./pdf-export-service";
+import { createAcademicOffersPdf, logPdfStage } from "./pdf-export-service";
 import { dateStamp, slugifyFilename } from "./report-utils";
 import type { GeneratedReport } from "./reports-service";
 
@@ -36,8 +36,10 @@ export async function createAcademicOffersCsvReport(query: AcademicOfferQuery): 
 }
 
 export async function createAcademicOffersPdfReport(query: AcademicOfferQuery): Promise<GeneratedReport> {
+  logPdfStage("oferta-academica", "inicio");
   const dataset = await getAcademicOfferDataset();
   const rows = filterAndSortAcademicOffers(dataset.offers, query);
+  logPdfStage("oferta-academica", "carga de datos", { records: rows.length });
   return {
     body: await createAcademicOffersPdf(rows, { year: dataset.referenceYear, filters: appliedOfferFilters(query) }),
     contentType: "application/pdf",

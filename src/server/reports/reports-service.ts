@@ -6,7 +6,7 @@ import { getConfig } from "@/server/repositories/config-repository";
 import { getInstitutionDirectory } from "@/server/services/institution-directory-service";
 import { getInstitutionById } from "@/server/services/institutions-service";
 import { createExcelCsv } from "./csv-export-service";
-import { createInstitutionProfilePdf, createInstitutionsPdf } from "./pdf-export-service";
+import { createInstitutionProfilePdf, createInstitutionsPdf, logPdfStage } from "./pdf-export-service";
 import { appliedFilters, dateStamp, filteredFilenameSuffix, slugifyFilename } from "./report-utils";
 
 export interface GeneratedReport {
@@ -30,8 +30,10 @@ export async function createInstitutionsCsvReport(query: InstitutionQuery): Prom
 }
 
 export async function createInstitutionsPdfReport(query: InstitutionQuery): Promise<GeneratedReport> {
+  logPdfStage("instituciones", "inicio");
   const [directory, config] = await Promise.all([getInstitutionDirectory(), getConfig()]);
   const rows = filterAndSortInstitutions(directory.institutions, query);
+  logPdfStage("instituciones", "carga de datos", { records: rows.length });
   const body = await createInstitutionsPdf(rows, {
     year: requireConsolidatedReferenceYear(config),
     filters: appliedFilters(query),
@@ -67,7 +69,9 @@ export async function createInstitutionCsvReport(id: string): Promise<GeneratedR
 }
 
 export async function createInstitutionPdfReport(id: string): Promise<GeneratedReport | null> {
+  logPdfStage("ficha-institucional", "inicio");
   const { institution } = await getInstitutionById(id);
+  logPdfStage("ficha-institucional", "carga de datos", { records: institution ? 1 : 0 });
   if (!institution) return null;
   return {
     body: await createInstitutionProfilePdf(institution), contentType: "application/pdf",

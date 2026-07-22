@@ -1,6 +1,10 @@
 import type { GeneratedReport } from "./reports-service";
+import { logPdfStage } from "./pdf-export-service";
 
 export function downloadResponse(report: GeneratedReport): Response {
+  if (report.contentType === "application/pdf") {
+    logPdfStage("exportación", "respuesta", { bytes: report.body.length });
+  }
   return new Response(new Uint8Array(report.body), {
     status: 200,
     headers: {
@@ -12,4 +16,3 @@ export function downloadResponse(report: GeneratedReport): Response {
     },
   });
 }
-

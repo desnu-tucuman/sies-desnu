@@ -3,7 +3,7 @@ import "server-only";
 import { filterAndSortAuthorities, type AuthorityDirectoryQuery } from "@/domain/authorities-directory";
 import { getAuthoritiesDirectory } from "@/server/services/authorities-directory-service";
 import { createExcelCsv } from "./csv-export-service";
-import { createAuthoritiesDirectoryPdf } from "./pdf-export-service";
+import { createAuthoritiesDirectoryPdf, logPdfStage } from "./pdf-export-service";
 import { dateStamp, slugifyFilename } from "./report-utils";
 import type { GeneratedReport } from "./reports-service";
 
@@ -29,6 +29,8 @@ export async function createAuthoritiesCsvReport(query: AuthorityDirectoryQuery)
 }
 
 export async function createAuthoritiesPdfReport(query: AuthorityDirectoryQuery): Promise<GeneratedReport> {
+  logPdfStage("autoridades", "inicio");
   const directory = await getAuthoritiesDirectory(); const rows = filterAndSortAuthorities(directory.authorities, query);
+  logPdfStage("autoridades", "carga de datos", { records: rows.length });
   return { body: await createAuthoritiesDirectoryPdf(rows, { filters: appliedFilters(query) }), contentType: "application/pdf", filename: `directorio_autoridades_sies${filenameSuffix(query)}_${dateStamp()}.pdf` };
 }
