@@ -23,13 +23,13 @@ export function slugifyFilename(value: string, fallback = "institucion"): string
 export function appliedFilters(query: InstitutionQuery): string[] {
   return FILTER_LABELS.flatMap(([key, label]) => {
     const value = query[key];
+    if (Array.isArray(value)) return value.length ? [`${label}: ${value.join(", ")}`] : [];
     return typeof value === "string" && value.trim() ? [`${label}: ${value.trim()}`] : [];
   });
 }
 
 export function filteredFilenameSuffix(query: InstitutionQuery): string {
-  const values = [query.management, query.department, query.locality, query.siteType, query.trainingType]
+  const values = [query.management, query.department, query.locality, query.siteType, ...(query.trainingType ?? [])]
     .filter((value): value is string => Boolean(value?.trim())).slice(0, 2);
   return values.length ? `_${slugifyFilename(values.join("_"), "filtro")}` : "";
 }
-

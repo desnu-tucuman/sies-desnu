@@ -1,4 +1,4 @@
-import { safeText, type QueryParameterSource } from "./institutions";
+import { queryValues, safeText, type QueryParameterSource } from "./institutions";
 
 export const LIST_REPORT_TYPES = ["institutions", "institution-offers", "career-places", "authorities"] as const;
 export type ListReportType = typeof LIST_REPORT_TYPES[number];
@@ -14,6 +14,7 @@ export interface ListReportQuery {
   locality?: string;
   siteType?: string;
   trainingType?: string;
+  institutionalTrainingTypes?: string[];
   careerType?: string;
 }
 
@@ -32,6 +33,8 @@ export function listReportQueryFromParams(params: QueryParameterSource): ListRep
     institution: safeText(params.get("institution")), role: safeText(params.get("role")),
     management: safeText(params.get("management")), department: safeText(params.get("department")),
     locality: safeText(params.get("locality")), siteType: safeText(params.get("siteType")),
-    trainingType: safeText(params.get("trainingType")), careerType: safeText(params.get("careerType")),
+    trainingType: type === "career-places" ? safeText(params.get("trainingType")) : "",
+    institutionalTrainingTypes: type === "institutions" || type === "institution-offers" ? queryValues(params, "trainingType") : [],
+    careerType: safeText(params.get("careerType")),
   };
 }

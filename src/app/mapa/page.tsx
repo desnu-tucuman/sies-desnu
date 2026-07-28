@@ -1,16 +1,14 @@
 import Link from "next/link";
+import { MultiSelectFilter } from "@/components/multi-select-filter";
 import { EmptyState, SourceError } from "@/components/ui";
 import { MapLoader } from "@/components/map/map-loader";
 import { institutionQueryFromParams } from "@/domain/institutions";
+import { toUrlSearchParams, type SearchParamsRecord } from "@/domain/url-params";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function one(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
-}
+type SearchParams = SearchParamsRecord;
 
 function SelectFilter({ name, label, value, options }: { name: string; label: string; value: string; options: string[] }) {
   return <label><span>{label}</span><select name={name} defaultValue={value}><option value="">Todos</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
@@ -18,8 +16,7 @@ function SelectFilter({ name, label, value, options }: { name: string; label: st
 
 export default async function MapPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
-  const urlParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => { const clean = one(value); if (clean) urlParams.set(key, clean); });
+  const urlParams = toUrlSearchParams(params);
   const query = institutionQueryFromParams(urlParams);
 
   try {
@@ -33,7 +30,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         <SelectFilter name="department" label="Departamento" value={query.department ?? ""} options={dataset.filters.department} />
         <SelectFilter name="locality" label="Localidad" value={query.locality ?? ""} options={dataset.filters.locality} />
         <SelectFilter name="siteType" label="Tipo de sede" value={query.siteType ?? ""} options={dataset.filters.siteType} />
-        <SelectFilter name="trainingType" label="Tipo de formación institucional" value={query.trainingType ?? ""} options={dataset.filters.trainingType} />
+        <MultiSelectFilter name="trainingType" label="Tipo de formación institucional" value={query.trainingType ?? []} options={dataset.filters.trainingType} />
         <div className="filterActions"><button type="submit">Aplicar filtros</button><Link href="/mapa">Limpiar filtros</Link></div>
       </form>
 
@@ -54,4 +51,3 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
     return <main className="contentWidth pageTop"><SourceError error={error} /></main>;
   }
 }
-

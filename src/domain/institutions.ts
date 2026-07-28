@@ -64,7 +64,7 @@ export interface InstitutionQuery {
   department?: string;
   locality?: string;
   siteType?: string;
-  trainingType?: string;
+  trainingType?: string[];
   sort?: "name" | "management" | "locality" | "department" | "siteType" | "trainingType";
   direction?: "asc" | "desc";
   page?: number;
@@ -87,6 +87,18 @@ export interface InstitutionQueryResult {
 
 export interface QueryParameterSource {
   get(name: string): string | null | undefined;
+  getAll?(name: string): string[];
+}
+
+export function queryValues(params: QueryParameterSource, name: string): string[] {
+  const values = params.getAll ? params.getAll(name) : [params.get(name) ?? ""];
+  const unique = new Map<string, string>();
+  for (const value of values) {
+    const clean = safeText(value);
+    const normalized = normalizeForMatch(clean);
+    if (clean && !unique.has(normalized)) unique.set(normalized, clean);
+  }
+  return [...unique.values()];
 }
 
 export function institutionQueryFromParams(params: QueryParameterSource): InstitutionQuery {
@@ -101,7 +113,7 @@ export function institutionQueryFromParams(params: QueryParameterSource): Instit
     department: safeText(params.get("department")),
     locality: safeText(params.get("locality")),
     siteType: safeText(params.get("siteType")),
-    trainingType: safeText(params.get("trainingType")),
+    trainingType: queryValues(params, "trainingType"),
     sort: allowedSorts.find((option) => option === sortValue),
     direction: params.get("direction") === "desc" ? "desc" : "asc",
     page: Number.isFinite(pageValue) && pageValue > 0 ? pageValue : 1,
@@ -278,6 +290,8 @@ export function filterAndSortInstitutions(
   const normalizedSearch = normalizeForMatch(query.search ?? "");
   const equals = (actual: string, expected?: string) =>
     !expected || normalizeForMatch(actual) === normalizeForMatch(expected);
+  const equalsAny = (actual: string, expected?: string[]) =>
+    !expected?.length || expected.some((value) => normalizeForMatch(actual) === normalizeForMatch(value));
 
   const filtered = institutions.filter((institution) =>
     (!normalizedSearch || normalizeForMatch(`${institution.name} ${institution.cue}`).includes(normalizedSearch)) &&
@@ -285,7 +299,7 @@ export function filterAndSortInstitutions(
     equals(institution.department, query.department) &&
     equals(institution.locality, query.locality) &&
     equals(institution.siteType, query.siteType) &&
-    equals(institution.baseTrainingType, query.trainingType));
+    equalsAny(institution.baseTrainingType, query.trainingType));
 
   const allowedSorts = new Set(["name", "management", "locality", "department", "siteType", "trainingType"]);
   const sort = query.sort && allowedSorts.has(query.sort) ? query.sort : "name";

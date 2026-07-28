@@ -1,22 +1,20 @@
 import Link from "next/link";
+import { MultiSelectFilter } from "@/components/multi-select-filter";
 import { DataValue, EmptyState, SourceError } from "@/components/ui";
 import { institutionQueryFromParams, queryInstitutions, type InstitutionQuery } from "@/domain/institutions";
+import { toUrlSearchParams, type SearchParamsRecord } from "@/domain/url-params";
 import { getInstitutionDirectory } from "@/server/services/institution-directory-service";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParams = SearchParamsRecord;
 
 function one(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
 function urlWith(params: SearchParams, changes: Record<string, string | number | undefined>): string {
-  const next = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    const clean = one(value);
-    if (clean) next.set(key, clean);
-  }
+  const next = toUrlSearchParams(params);
   for (const [key, value] of Object.entries(changes)) {
     if (value === undefined || value === "") next.delete(key); else next.set(key, String(value));
   }
@@ -38,8 +36,7 @@ export default async function InstitutionsPage({ searchParams }: { searchParams:
   const params = await searchParams;
   try {
     const directory = await getInstitutionDirectory();
-    const urlParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => { const clean = one(value); if (clean) urlParams.set(key, clean); });
+    const urlParams = toUrlSearchParams(params);
     const query: InstitutionQuery = { ...institutionQueryFromParams(urlParams), pageSize: 20 };
     const result = queryInstitutions(directory.institutions, query);
     urlParams.delete("page");
@@ -55,7 +52,7 @@ export default async function InstitutionsPage({ searchParams }: { searchParams:
         <SelectFilter name="department" label="Departamento" value={query.department ?? ""} options={result.filters.department} />
         <SelectFilter name="locality" label="Localidad" value={query.locality ?? ""} options={result.filters.locality} />
         <SelectFilter name="siteType" label="Tipo de sede" value={query.siteType ?? ""} options={result.filters.siteType} />
-        <SelectFilter name="trainingType" label="Tipo de formación institucional" value={query.trainingType ?? ""} options={result.filters.trainingType} />
+        <MultiSelectFilter name="trainingType" label="Tipo de formación institucional" value={query.trainingType ?? []} options={result.filters.trainingType} />
         <div className="filterActions"><button type="submit">Aplicar filtros</button><Link href="/instituciones">Limpiar filtros</Link></div>
       </form>
 

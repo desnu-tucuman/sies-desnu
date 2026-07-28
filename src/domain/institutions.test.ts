@@ -61,9 +61,19 @@ describe("normalización y unión institucional", () => {
   it("preserva la clasificación mixta y permite filtrarla", () => {
     const mixed = master({ cue_anexo: "900066400", nombre_establecimiento: "ESC. NORMAL SUPERIOR MANUEL BELGRANO", tipo_formacion_base: "MIXTA", tipo_sede: "Sede" });
     const dataset = joinInstitutionSources([mixed], [], [], "2025");
-    const result = queryInstitutions(dataset.institutions, { trainingType: "mixta" });
+    const result = queryInstitutions(dataset.institutions, { trainingType: ["mixta"] });
     expect(result.total).toBe(1);
     expect(result.items[0].baseTrainingType).toBe("MIXTA");
+  });
+
+  it("combina múltiples tipos de formación con lógica OR", () => {
+    const rows = createInstitutionDirectoryRows([
+      master({ cue_anexo: "1", nombre_establecimiento: "Docente", tipo_formacion_base: "DOCENTE" }),
+      master({ cue_anexo: "2", nombre_establecimiento: "Mixta", tipo_formacion_base: "MIXTA" }),
+      master({ cue_anexo: "3", nombre_establecimiento: "Técnica", tipo_formacion_base: "TÉCNICA" }),
+    ]);
+    const result = queryInstitutions(rows, { trainingType: ["docente", "MIXTA"] });
+    expect(result.items.map((item) => item.baseTrainingType).sort()).toEqual(["DOCENTE", "MIXTA"]);
   });
 
   it("admite una extensión áulica sin datos de contacto", () => {
@@ -108,7 +118,12 @@ describe("normalización y unión institucional", () => {
     const params = new URLSearchParams("search=Santa+Ana&management=Estatal&department=RIO+CHICO&siteType=Extensi%C3%B3n+%C3%81ulica&trainingType=T%C3%89CNICA");
     expect(institutionQueryFromParams(params)).toMatchObject({
       search: "Santa Ana", management: "Estatal", department: "RIO CHICO",
-      siteType: "Extensión Áulica", trainingType: "TÉCNICA",
+      siteType: "Extensión Áulica", trainingType: ["TÉCNICA"],
     });
+  });
+
+  it("interpreta parámetros repetidos y deduplica variantes normalizadas", () => {
+    const params = new URLSearchParams("trainingType=DOCENTE&trainingType=MIXTA&trainingType=docente");
+    expect(institutionQueryFromParams(params).trainingType).toEqual(["DOCENTE", "MIXTA"]);
   });
 });

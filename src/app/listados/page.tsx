@@ -1,22 +1,22 @@
 import Link from "next/link";
 import { ListTypeSelector } from "@/components/lists/list-type-selector";
+import { MultiSelectFilter } from "@/components/multi-select-filter";
 import { DataValue, EmptyState, SourceError } from "@/components/ui";
 import { listReportQueryFromParams, type ListReportQuery } from "@/domain/list-reports";
+import { toUrlSearchParams, type SearchParamsRecord } from "@/domain/url-params";
 import { getListReport } from "@/server/services/list-reports-service";
 
 export const dynamic = "force-dynamic";
-type SearchParams = Record<string, string | string[] | undefined>;
-function one(value: string | string[] | undefined): string { return Array.isArray(value) ? value[0] ?? "" : value ?? ""; }
+type SearchParams = SearchParamsRecord;
 function SelectFilter({ name, label, value, options }: { name: string; label: string; value: string; options?: string[] }) {
   return <label><span>{label}</span><select name={name} defaultValue={value}><option value="">Todos</option>{(options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
 }
 function CommonTerritoryFilters({ query, options, training = false }: { query: ListReportQuery; options: Record<string, string[]>; training?: boolean }) {
-  return <><SelectFilter name="management" label="Gestión" value={query.management ?? ""} options={options.management} /><SelectFilter name="department" label="Departamento" value={query.department ?? ""} options={options.department} /><SelectFilter name="locality" label="Localidad" value={query.locality ?? ""} options={options.locality} /><SelectFilter name="siteType" label="Tipo de sede" value={query.siteType ?? ""} options={options.siteType} />{training ? <SelectFilter name="trainingType" label="Tipo de formación" value={query.trainingType ?? ""} options={options.trainingType} /> : null}</>;
+  return <><SelectFilter name="management" label="Gestión" value={query.management ?? ""} options={options.management} /><SelectFilter name="department" label="Departamento" value={query.department ?? ""} options={options.department} /><SelectFilter name="locality" label="Localidad" value={query.locality ?? ""} options={options.locality} /><SelectFilter name="siteType" label="Tipo de sede" value={query.siteType ?? ""} options={options.siteType} />{training ? <MultiSelectFilter name="trainingType" label="Tipo de formación institucional" value={query.institutionalTrainingTypes ?? []} options={options.trainingType ?? []} /> : null}</>;
 }
 
 export default async function ListsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const params = await searchParams; const urlParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => { const clean = one(value); if (clean) urlParams.set(key, clean); });
+  const params = await searchParams; const urlParams = toUrlSearchParams(params);
   const query = listReportQueryFromParams(urlParams);
   try {
     const report = await getListReport(query);

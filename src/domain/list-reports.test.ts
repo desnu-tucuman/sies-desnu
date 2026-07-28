@@ -10,4 +10,11 @@ describe("consulta del generador de listados", () => {
   it("usa instituciones ante un tipo desconocido", () => {
     expect(listReportQueryFromParams(new URLSearchParams("type=otro"))).toMatchObject({ type: "institutions", preview: false });
   });
+
+  it("conserva múltiples tipos institucionales y mantiene la URL antigua", () => {
+    expect(listReportQueryFromParams(new URLSearchParams("type=institutions&trainingType=DOCENTE&trainingType=MIXTA")))
+      .toMatchObject({ institutionalTrainingTypes: ["DOCENTE", "MIXTA"] });
+    expect(listReportQueryFromParams(new URLSearchParams("type=institutions&trainingType=DOCENTE")))
+      .toMatchObject({ institutionalTrainingTypes: ["DOCENTE"] });
+  });
 });

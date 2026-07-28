@@ -32,9 +32,16 @@ const FILTER_LABELS: Array<[keyof ListReportQuery, string]> = [
 ];
 
 function appliedFilters(query: ListReportQuery): string[] {
-  return FILTER_LABELS.flatMap(([key, label]) => { const value = query[key]; return typeof value === "string" && value.trim() ? [`${label}: ${value.trim()}`] : []; });
+  return FILTER_LABELS.flatMap(([key, label]) => {
+    const value = key === "trainingType" && query.institutionalTrainingTypes?.length
+      ? query.institutionalTrainingTypes
+      : query[key];
+    if (Array.isArray(value)) return value.length ? [`${label}: ${value.join(", ")}`] : [];
+    return typeof value === "string" && value.trim() ? [`${label}: ${value.trim()}`] : [];
+  });
 }
 function equals(actual: string, expected?: string): boolean { return !expected || normalizeForMatch(actual) === normalizeForMatch(expected); }
+function equalsAny(actual: string, expected?: string[]): boolean { return !expected?.length || expected.some((value) => normalizeForMatch(actual) === normalizeForMatch(value)); }
 function includes(actual: string, expected?: string): boolean { return !expected || normalizeForMatch(actual).includes(normalizeForMatch(expected)); }
 function distinct<T>(rows: T[], value: (row: T) => string): string[] {
   const found = new Map<string, string>(); rows.forEach((row) => { const original = safeText(value(row)); const key = normalizeForMatch(original); if (original && !found.has(key)) found.set(key, original); });
@@ -43,7 +50,7 @@ function distinct<T>(rows: T[], value: (row: T) => string): string[] {
 
 async function institutionsReport(query: ListReportQuery): Promise<ListReportData> {
   const directory = await getInstitutionDirectory();
-  const rows = filterAndSortInstitutions(directory.institutions, { search: query.search, management: query.management, department: query.department, locality: query.locality, siteType: query.siteType, trainingType: query.trainingType });
+  const rows = filterAndSortInstitutions(directory.institutions, { search: query.search, management: query.management, department: query.department, locality: query.locality, siteType: query.siteType, trainingType: query.institutionalTrainingTypes });
   return {
     title: LIST_REPORT_LABELS.institutions, year: "", filtersApplied: appliedFilters(query), partialCount: directory.incompleteRows,
     columns: ["Institución", "CUE", "CUI", "Gestión", "Tipo de sede", "Formación institucional", "Localidad", "Departamento", "Dirección", "Teléfono", "Correo institucional"],
@@ -62,7 +69,7 @@ async function institutionOffersReport(query: ListReportQuery): Promise<ListRepo
       ...institution.offer.otherDegrees.map((title) => ({ title, category: "Otra formación" })),
     ];
     const selected = categorized.filter((offer) => equals(offer.category, query.careerType) && includes(offer.title, query.search));
-    if (!selected.length || !includes(institution.name, query.institution) || !equals(institution.management, query.management) || !equals(institution.department, query.department) || !equals(institution.locality, query.locality) || !equals(institution.siteType, query.siteType) || !equals(institution.baseTrainingType, query.trainingType)) return [];
+    if (!selected.length || !includes(institution.name, query.institution) || !equals(institution.management, query.management) || !equals(institution.department, query.department) || !equals(institution.locality, query.locality) || !equals(institution.siteType, query.siteType) || !equalsAny(institution.baseTrainingType, query.institutionalTrainingTypes)) return [];
     return [{ management: institution.management, institution: institution.name, locality: institution.locality, department: institution.department, siteType: institution.siteType, offers: selected.map((item) => item.title), enrollment: institution.offer.enrollment, entrants: institution.offer.entrants, graduates: institution.offer.graduates, categories: selected.map((item) => item.category) }];
   });
   const order = (value: string) => normalizeForMatch(value).includes("ESTATAL") ? 0 : 1;
