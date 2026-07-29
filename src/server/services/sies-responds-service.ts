@@ -7,6 +7,7 @@ import { getAuthoritiesDirectory } from "@/server/services/authorities-directory
 import { getInstitutionDirectory } from "@/server/services/institution-directory-service";
 import { interpretSiesConversationalQuery } from "@/services/sies-conversational-query-interpreter";
 import { resolveAuthorityConversation, resolveInstitutionConversation, resolveOfferConversation } from "@/services/sies-conversational-result-service";
+import { buildSiesMapUrl } from "@/services/sies-map-query-service";
 import { routeSiesRespondsQuery } from "@/services/sies-responds-router-service";
 
 function action(label: string, href: string, intent: SiesRespondsAction["intent"]): SiesRespondsAction { return { label, href, intent }; }
@@ -24,7 +25,7 @@ function offerActions(result: SiesConversationalResult): SiesRespondsAction[] {
   if (query.managementType) params.set("management", query.managementType);
   if (query.department) params.set("department", query.department);
   if (query.locality) params.set("locality", query.locality);
-  return [action("Ampliar en Ofertas", `/ofertas${params.size ? `?${params}` : ""}`, "offers"), action("Ver instituciones", "/instituciones", "institutions"), action("Consultar el mapa", "/mapa", "map")];
+  return [action("Ampliar en Ofertas", `/ofertas${params.size ? `?${params}` : ""}`, "offers"), action("Ver instituciones", "/instituciones", "institutions"), action("Consultar el mapa", buildSiesMapUrl(query), "map")];
 }
 
 function responseWithResult(intent: SiesRespondsResponse["intent"], text: string, result: SiesConversationalResult, actions: SiesRespondsAction[]): SiesRespondsResponse {
@@ -59,9 +60,10 @@ export async function answerSiesRespondsQuery(input: SiesRespondsQuery): Promise
         ? `Encontré ${metric(result, "Instituciones")} instituciones en ${metric(result, "Departamentos")} departamentos y ${metric(result, "Localidades")} localidades.`
         : "No encontré instituciones que coincidan con todos los términos indicados. Puedes ampliar o reformular la consulta.";
       const isMap = structured.intent === "territorio";
+      const mapUrl = buildSiesMapUrl(result.interpretedQuery);
       const actions = isMap
-        ? [action("Abrir resultados en el mapa", "/mapa", "map"), action("Ver instituciones", "/instituciones", "institutions")]
-        : [action("Ampliar en Instituciones", "/instituciones", "institutions"), action("Consultar el mapa", "/mapa", "map")];
+        ? [action("Abrir resultados en el mapa", mapUrl, "map"), action("Ver instituciones", "/instituciones", "institutions")]
+        : [action("Ampliar en Instituciones", "/instituciones", "institutions"), action("Consultar el mapa", mapUrl, "map")];
       return responseWithResult(isMap ? "map" : "institutions", summary, result, actions);
     }
     if (structured.intent === "autoridades") {
