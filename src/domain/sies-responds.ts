@@ -38,6 +38,7 @@ export interface SiesConversationalQuery {
   managementType?: "ESTATAL" | "PRIVADA";
   trainingTypes?: string[];
   department?: string;
+  departments?: string[];
   locality?: string;
   siteType?: string;
   requestedGrouping?: "department" | "locality" | "institution";

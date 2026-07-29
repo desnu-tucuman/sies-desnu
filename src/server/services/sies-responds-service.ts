@@ -44,6 +44,8 @@ export async function answerSiesRespondsQuery(input: SiesRespondsQuery): Promise
     originalQuery: text,
     normalizedQuery: normalizeForMatch(text),
     parsedQuery: structured,
+    regionDetected: structured.region ?? null,
+    departmentsExpanded: structured.departments ?? [],
     ...details,
   });
   trace({ stage: "interpreted", fallbackReason: null });

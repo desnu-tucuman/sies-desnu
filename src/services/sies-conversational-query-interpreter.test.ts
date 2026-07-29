@@ -11,6 +11,13 @@ describe("intérprete estructurado de SIES Responde", () => {
     });
   });
 
+  it("expande la región sur sin usarla como término de búsqueda", () => {
+    expect(interpretSiesConversationalQuery("¿Qué tecnicaturas se dictan en el sur?")).toMatchObject({
+      intent: "ofertas", careerType: "TECNICATURA", region: "SUR", searchTerms: [],
+      departments: ["MONTEROS", "CHICLIGASTA", "RIO CHICO", "JUAN BAUTISTA ALBERDI", "LA COCHA", "GRANEROS"],
+    });
+  });
+
   it("interpreta formación docente como DOCENTE o MIXTA", () => {
     expect(interpretSiesConversationalQuery("Institutos con formación docente en Capital")).toMatchObject({
       intent: "instituciones", trainingTypes: ["DOCENTE", "MIXTA"], searchTerms: ["DOCENTE", "CAPITAL"],

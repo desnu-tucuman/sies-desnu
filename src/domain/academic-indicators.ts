@@ -1,14 +1,13 @@
 import type { SheetRow } from "@/server/sheets/types";
 import { createInstitutionId, normalizeForMatch, safeText } from "./institutions";
 import type { AcademicIndicator, SiesConversationalQuery, SiesConversationalResult } from "./sies-responds";
+import { expandSiesRegion, matchesAnyDepartment } from "./sies-territorial-regions";
 
 export interface AcademicIndicatorRow {
   year: string; cue: string; title: string; institution: string; management: string;
   department: string; locality: string; careerType: string; trainingType: string;
   enrollment: number; entrants: number; graduates: number;
 }
-
-const SOUTH_DEPARTMENTS = new Set(["CHICLIGASTA", "GRANEROS", "JUAN BAUTISTA ALBERDI", "LA COCHA", "RIO CHICO", "SIMOCA"]);
 
 function number(value: unknown): number {
   const parsed = Number(String(value ?? "").trim().replace(/\./g, "").replace(",", "."));
@@ -43,12 +42,6 @@ export function createAcademicIndicatorRows(rows: SheetRow[], maximumYear: strin
 
 function indicatorValue(row: AcademicIndicatorRow, indicator: AcademicIndicator): number { return row[indicator]; }
 
-function matchesRegion(row: AcademicIndicatorRow, region?: string): boolean {
-  if (!region) return true;
-  if (normalizeForMatch(region) === "SUR") return SOUTH_DEPARTMENTS.has(normalizeForMatch(row.department));
-  return false;
-}
-
 export function resolveAcademicIndicators(text: string, query: SiesConversationalQuery, rows: AcademicIndicatorRow[], configuredYear: string): SiesConversationalResult {
   const indicator = query.academicIndicator ?? "graduates";
   const targetYear = query.year ?? configuredYear;
@@ -59,10 +52,11 @@ export function resolveAcademicIndicators(text: string, query: SiesConversationa
   const titleTerms = query.searchTerms.filter((term) => !excluded.has(term));
   const department = query.department ?? knownDepartment;
   const institutionName = query.institutionName ?? knownInstitution;
+  const regionDepartments = query.departments?.length ? query.departments : expandSiesRegion(query.region);
   const base = rows.filter((row) =>
     (!query.managementType || normalizeForMatch(row.management).includes(normalizeForMatch(query.managementType))) &&
     (!department || normalizeForMatch(row.department) === normalizeForMatch(department)) &&
-    matchesRegion(row, query.region) &&
+    matchesAnyDepartment(row.department, regionDepartments) &&
     (!query.careerType || (query.careerType === "PROFESORADO" ? normalizeForMatch(row.title).includes("PROFESOR") : normalizeForMatch(row.title).includes("TECNIC"))) &&
     (!query.trainingTypes?.length || query.trainingTypes.some((value) => normalizeForMatch(row.trainingType) === normalizeForMatch(value))) &&
     (!institutionName || normalizeForMatch(row.institution).includes(normalizeForMatch(institutionName))) &&

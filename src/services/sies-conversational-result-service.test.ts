@@ -26,4 +26,16 @@ describe("resultados conversacionales basados en datos", () => {
     expect(result.groups[0]).toMatchObject({ count: 2, items: [{ label: "IES CAPITAL" }] });
     expect(result.institutionIds).toHaveLength(2);
   });
+
+  it("limita las tecnicaturas a los departamentos expandidos de la región", () => {
+    const text = "¿Qué tecnicaturas se dictan en el sur?";
+    const rows = [
+      offer({ id: "1", title: "TECNICATURA EN TURISMO", careerType: "TECNICATURA", department: "MONTEROS" }),
+      offer({ id: "2", title: "TECNICATURA EN TURISMO", careerType: "TECNICATURA", department: "CAPITAL" }),
+      offer({ id: "3", title: "TECNICATURA EN TURISMO", careerType: "TECNICATURA", department: "RÍO CHICO" }),
+    ];
+    const result = resolveOfferConversation(text, interpretSiesConversationalQuery(text), rows, "2025");
+    expect(result.totalMatches).toBe(2);
+    expect(result.groups.map((group) => group.label)).toEqual(["MONTEROS", "RÍO CHICO"]);
+  });
 });

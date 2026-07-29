@@ -2,6 +2,7 @@ import type { AcademicOfferItem } from "../domain/academic-offer";
 import type { AuthorityDirectoryItem } from "../domain/authorities-directory";
 import { compareText, createInstitutionId, normalizeForMatch, safeText, type InstitutionDirectoryItem } from "../domain/institutions";
 import type { SiesConversationalQuery, SiesConversationalResult, SiesConversationalResultGroup } from "../domain/sies-responds";
+import { matchesAnyDepartment } from "../domain/sies-territorial-regions";
 
 function matches(actual: string, expected?: string): boolean {
   return !expected || normalizeForMatch(actual).includes(normalizeForMatch(expected));
@@ -53,7 +54,7 @@ export function resolveOfferConversation(text: string, query: SiesConversational
   };
   const filtered = offers.filter((offer) =>
     matchesCareerType(offer) &&
-    matches(offer.management, query.managementType) && matches(offer.department, department) && matches(offer.locality, locality) &&
+    matches(offer.management, query.managementType) && matches(offer.department, department) && matchesAnyDepartment(offer.department, query.departments) && matches(offer.locality, locality) &&
     (!terms.length || terms.every((term) => normalizeForMatch(offer.title).includes(term))));
   const institutions = new Set(filtered.map((row) => `${row.cue}::${normalizeForMatch(row.institution)}`));
   const departments = new Set(filtered.map((row) => normalizeForMatch(row.department)).filter(Boolean));
@@ -97,7 +98,7 @@ export function resolveInstitutionConversation(text: string, query: SiesConversa
   const locality = resolveKnownValue(text, distinctValues(institutions, (row) => row.locality));
   const terms = contentTerms(query, [department, locality, query.managementType, ...(query.trainingTypes ?? [])]);
   const filtered = institutions.filter((institution) =>
-    matches(institution.management, query.managementType) && matches(institution.department, department) && matches(institution.locality, locality) &&
+    matches(institution.management, query.managementType) && matches(institution.department, department) && matchesAnyDepartment(institution.department, query.departments) && matches(institution.locality, locality) &&
     (!query.trainingTypes?.length || query.trainingTypes.some((value) => normalizeForMatch(institution.baseTrainingType) === normalizeForMatch(value))) &&
     (!terms.length || terms.every((term) => normalizeForMatch(`${institution.name} ${institution.cue}`).includes(term))));
   const grouping = query.requestedGrouping ?? (department ? "locality" : "department");
@@ -116,7 +117,7 @@ export function resolveAuthorityConversation(text: string, query: SiesConversati
   const locality = resolveKnownValue(text, distinctValues(authorities, (row) => row.locality));
   const terms = contentTerms(query, [department, locality, query.managementType]);
   const filtered = authorities.filter((authority) =>
-    matches(authority.management, query.managementType) && matches(authority.department, department) && matches(authority.locality, locality) &&
+    matches(authority.management, query.managementType) && matches(authority.department, department) && matchesAnyDepartment(authority.department, query.departments) && matches(authority.locality, locality) &&
     (!terms.length || terms.every((term) => normalizeForMatch(`${authority.institution} ${authority.name} ${authority.role} ${authority.cue}`).includes(term))));
   const groups = createGroups(filtered, (row) => row.institution, (row) => ({
     label: row.name || "No hay datos", detail: `${row.role || "Autoridad"}${row.phone ? ` · ${row.phone}` : ""}`, href: `/instituciones/${row.institutionId}`,

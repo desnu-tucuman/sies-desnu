@@ -1,12 +1,13 @@
 import { normalizeForMatch, safeText } from "../domain/institutions";
 import type { SiesConversationalQuery } from "../domain/sies-responds";
+import { detectSiesRegion, expandSiesRegion } from "../domain/sies-territorial-regions";
 
 const STOP_WORDS = new Set([
   "A", "AL", "ALGUN", "ALGUNA", "ALGUNOS", "CON", "CUAL", "CUALES", "DE", "DEL", "DONDE", "EL", "EN", "ESTA", "ESTAN",
   "HAY", "LA", "LAS", "LOS", "ME", "QUE", "QUIEN", "QUIENES", "SE", "SON", "UN", "UNA", "VER", "QUIERO",
   "CARRERA", "CARRERAS", "OFERTA", "OFERTAS", "DICTA", "DICTAN", "PROFESORADO", "PROFESORADOS", "TECNICATURA", "TECNICATURAS",
   "INSTITUCION", "INSTITUCIONES", "INSTITUTO", "INSTITUTOS", "SEDE", "SEDES", "AUTORIDAD", "AUTORIDADES", "DIRECTOR", "DIRECTORA",
-  "RECTOR", "RECTORA", "DIRIGE", "IES", "FORMACION", "SUR", "TUCUMAN", "DEPARTAMENTO", "DEPARTAMENTOS", "LOCALIDAD", "LOCALIDADES", "CANTIDAD", "CUANTOS", "CUANTAS",
+  "RECTOR", "RECTORA", "DIRIGE", "IES", "FORMACION", "SUR", "NORTE", "ESTE", "OESTE", "CENTRO", "TUCUMAN", "DEPARTAMENTO", "DEPARTAMENTOS", "LOCALIDAD", "LOCALIDADES", "CANTIDAD", "CUANTOS", "CUANTAS",
   "EGRESADO", "EGRESADOS", "INGRESANTE", "INGRESANTES", "MATRICULA", "EVOLUCION", "CRECIMIENTO", "DISMINUCION", "TOTAL", "PROMEDIO", "HUBO", "TUVO", "TUVIERON", "REGISTRARON", "NO", "SIN", "CERO", "MAS", "MAYOR", "PERIODO",
 ]);
 
@@ -31,6 +32,7 @@ export function interpretSiesConversationalQuery(text: string): SiesConversation
   const managementType = has("PRIVADA", "PRIVADO") ? "PRIVADA" as const : has("ESTATAL", "PUBLICA", "PUBLICO") ? "ESTATAL" as const : undefined;
   const managementWords = new Set(["ESTATAL", "ESTATALES", "PUBLICA", "PUBLICAS", "PUBLICO", "PUBLICOS", "PRIVADA", "PRIVADAS", "PRIVADO", "PRIVADOS"]);
   const year = normalized.match(/\b(19|20)\d{2}\b/)?.[0];
+  const region = detectSiesRegion(normalized);
   const searchTerms = terms(normalized).filter((term) => !managementWords.has(term) && term !== year);
   if (/(^| )IES( |$)/.test(normalized)) searchTerms.unshift("ENSENANZA", "SUPERIOR");
   return {
@@ -45,7 +47,8 @@ export function interpretSiesConversationalQuery(text: string): SiesConversation
     requestedMetric: has("CUANTOS", "CUANTAS", "CANTIDAD", "EN QUE") ? "count" : undefined,
     academicIndicator,
     year,
-    region: has("EN EL SUR", "REGION SUR", "ZONA SUR") ? "SUR" : undefined,
+    region,
+    departments: expandSiesRegion(region),
     analysisMode: has("EVOLUCION", "CRECIMIENTO", "DISMINUCION") ? "evolution" : has("PROMEDIO") ? "average" : has("MAS ", "MAYOR") ? "maximum" : has("CERO", "NO REGISTRARON", "SIN EGRESADOS", "SIN INGRESANTES") ? "zero" : "total",
   };
 }
