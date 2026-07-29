@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
+import { SiesRespondsFloatingButton } from "@/components/sies-responds/floating-button";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/700.css";
 import "leaflet/dist/leaflet.css";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body><SiteHeader />{children}<footer>Dirección de Educación Superior No Universitaria · Ministerio de Educación de Tucumán</footer></body>
+      <body><SiteHeader />{children}<SiesRespondsFloatingButton /><footer>Dirección de Educación Superior No Universitaria · Ministerio de Educación de Tucumán</footer></body>
     </html>
   );
 }

@@ -12,6 +12,7 @@ export function SiteHeader() {
           <Link href="/ofertas">Ofertas</Link>
           <Link href="/autoridades">Autoridades</Link>
           <Link href="/listados">Listados</Link>
+          <Link className="respondsNavLink" href="/responde">SIES Responde</Link>
         </nav>
       </div>
     </header>

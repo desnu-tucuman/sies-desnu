@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SourceError } from "@/components/ui";
+import { SiesRespondsHomeEntry } from "@/components/sies-responds/home-entry";
 import { getInstitutionDataset } from "@/server/services/institutions-service";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export default async function HomePage() {
             <div className="heroMeta"><span>Año de referencia <strong>{dataset.referenceYear || "No hay datos"}</strong></span><span>Última actualización <strong>{dataset.lastUpdated}</strong></span></div>
           </div>
         </section>
+        <SiesRespondsHomeEntry />
         <section className="contentWidth homeSection" aria-labelledby="access-title">
           <p className="eyebrow">Accesos rápidos</p><h2 id="access-title">¿Qué necesita consultar?</h2>
           <div className="shortcutGrid">
