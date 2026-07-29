@@ -25,7 +25,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       <header className="pageHeading"><p className="eyebrow">Visualización territorial</p><h1>Mapa institucional</h1><p>Instituciones, sedes, anexos y extensiones áulicas registradas en MAESTRA_INSTITUCIONES.</p></header>
 
       <form className="filters mapFilters" method="get" action="/mapa">
-        <label className="searchField"><span>Nombre del establecimiento o CUE</span><input type="search" name="search" defaultValue={query.search} placeholder="Ej.: Ext. Áulica Santa Ana" /></label>
+        <label className="searchField"><span>Buscar por institución, CUE o carrera</span><input type="search" name="search" aria-label="Buscar por institución, CUE o carrera" defaultValue={query.search} placeholder="Ej.: IES Aguilares, 900012300 o Profesorado de Inglés" /></label>
         <SelectFilter name="management" label="Gestión" value={query.management ?? ""} options={dataset.filters.management} />
         <SelectFilter name="department" label="Departamento" value={query.department ?? ""} options={dataset.filters.department} />
         <SelectFilter name="locality" label="Localidad" value={query.locality ?? ""} options={dataset.filters.locality} />

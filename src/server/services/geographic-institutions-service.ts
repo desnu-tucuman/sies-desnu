@@ -3,24 +3,11 @@ import "server-only";
 import { validateInstitutionCoordinates, type LocatedInstitution, type UnlocatedInstitution } from "@/domain/geography";
 import { createInstitutionDirectoryRows, filterAndSortInstitutions, queryInstitutions, type InstitutionQuery } from "@/domain/institutions";
 import { getInstitutions } from "@/server/repositories/institutions-repository";
-import { getAcademicOfferDataset } from "@/server/services/academic-offer-service";
-import { institutionIdsForOfferSearch } from "@/services/sies-map-query-service";
 
 export async function getGeographicInstitutions(query: InstitutionQuery) {
   const master = await getInstitutions();
   const directory = createInstitutionDirectoryRows(master.rows);
-  const baseQuery = { ...query, search: undefined };
-  const baseDirectory = filterAndSortInstitutions(directory, baseQuery);
-  const institutionalMatches = new Set(filterAndSortInstitutions(directory, query).map((institution) => institution.id));
-  let academicMatches = new Set<string>();
-  if (query.search) {
-    const academicDataset = await getAcademicOfferDataset();
-    academicMatches = institutionIdsForOfferSearch(directory, academicDataset.offers, query.search);
-  }
-  const searchMatches = academicMatches.size ? academicMatches : institutionalMatches;
-  const filteredDirectory = query.search
-    ? baseDirectory.filter((institution) => searchMatches.has(institution.id))
-    : baseDirectory;
+  const filteredDirectory = filterAndSortInstitutions(directory, query);
   const selectedIds = new Set(filteredDirectory.map((institution) => institution.id));
   const located: LocatedInstitution[] = [];
   const unlocated: UnlocatedInstitution[] = [];

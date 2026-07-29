@@ -33,10 +33,12 @@ export interface SiesConversationalQuery {
   careerType?: "PROFESORADO" | "TECNICATURA";
   careerTitle?: string;
   institutionName?: string;
+  institutionCue?: string;
   managementType?: "ESTATAL" | "PRIVADA";
   trainingTypes?: string[];
   department?: string;
   locality?: string;
+  siteType?: string;
   requestedGrouping?: "department" | "locality" | "institution";
   requestedMetric?: "count";
 }
