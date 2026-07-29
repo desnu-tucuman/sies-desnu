@@ -24,5 +24,6 @@ describe("resultados conversacionales basados en datos", () => {
     ]));
     expect(result.groups.map((group) => group.label)).toEqual(["CAPITAL", "MONTEROS"]);
     expect(result.groups[0]).toMatchObject({ count: 2, items: [{ label: "IES CAPITAL" }] });
+    expect(result.institutionIds).toHaveLength(2);
   });
 });

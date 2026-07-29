@@ -1,6 +1,6 @@
 import type { AcademicOfferItem } from "../domain/academic-offer";
 import type { AuthorityDirectoryItem } from "../domain/authorities-directory";
-import { compareText, normalizeForMatch, safeText, type InstitutionDirectoryItem } from "../domain/institutions";
+import { compareText, createInstitutionId, normalizeForMatch, safeText, type InstitutionDirectoryItem } from "../domain/institutions";
 import type { SiesConversationalQuery, SiesConversationalResult, SiesConversationalResultGroup } from "../domain/sies-responds";
 
 function matches(actual: string, expected?: string): boolean {
@@ -88,6 +88,7 @@ export function resolveOfferConversation(text: string, query: SiesConversational
     ],
     groups, totalMatches: filtered.length, truncated: groups.length > 20 || offersTruncated,
     interpretedQuery: { ...query, department, locality, careerTitle: terms.join(" ") || query.careerTitle },
+    institutionIds: [...new Set(filtered.map((offer) => createInstitutionId(safeText(offer.cue), offer.institution)))],
   };
 }
 

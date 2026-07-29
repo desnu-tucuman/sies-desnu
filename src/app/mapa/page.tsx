@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MultiSelectFilter } from "@/components/multi-select-filter";
 import { EmptyState, SourceError } from "@/components/ui";
 import { MapLoader } from "@/components/map/map-loader";
+import { MapExportActions } from "@/components/map/map-export-actions";
 import { institutionQueryFromParams } from "@/domain/institutions";
 import { toUrlSearchParams, type SearchParamsRecord } from "@/domain/url-params";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
@@ -18,6 +19,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const params = await searchParams;
   const urlParams = toUrlSearchParams(params);
   const query = institutionQueryFromParams(urlParams);
+  const exportSuffix = urlParams.size ? `?${urlParams.toString()}` : "";
 
   try {
     const dataset = await getGeographicInstitutions(query);
@@ -33,6 +35,8 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         <MultiSelectFilter name="trainingType" label="Tipo de formación institucional" value={query.trainingType ?? []} options={dataset.filters.trainingType} />
         <div className="filterActions"><button type="submit">Aplicar filtros</button><Link href="/mapa">Limpiar filtros</Link></div>
       </form>
+
+      <MapExportActions total={dataset.total} exportSuffix={exportSuffix} />
 
       <section className="mapMetrics" aria-label="Resumen de ubicación">
         <article><span>Total filtrado</span><strong>{dataset.total}</strong></article>

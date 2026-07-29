@@ -21,11 +21,12 @@ export function slugifyFilename(value: string, fallback = "institucion"): string
 }
 
 export function appliedFilters(query: InstitutionQuery): string[] {
-  return FILTER_LABELS.flatMap(([key, label]) => {
+  const visible = FILTER_LABELS.flatMap(([key, label]) => {
     const value = query[key];
     if (Array.isArray(value)) return value.length ? [`${label}: ${value.join(", ")}`] : [];
     return typeof value === "string" && value.trim() ? [`${label}: ${value.trim()}`] : [];
   });
+  return query.institutionId?.length ? [...visible, `Instituciones seleccionadas: ${query.institutionId.length}`] : visible;
 }
 
 export function filteredFilenameSuffix(query: InstitutionQuery): string {

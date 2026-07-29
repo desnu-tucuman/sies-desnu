@@ -60,6 +60,7 @@ export interface InstitutionDataset {
 
 export interface InstitutionQuery {
   search?: string;
+  institutionId?: string[];
   management?: string;
   department?: string;
   locality?: string;
@@ -109,6 +110,7 @@ export function institutionQueryFromParams(params: QueryParameterSource): Instit
   const pageValue = Number(params.get("page"));
   return {
     search: safeText(params.get("search")),
+    institutionId: queryValues(params, "institutionId"),
     management: safeText(params.get("management")),
     department: safeText(params.get("department")),
     locality: safeText(params.get("locality")),
@@ -295,6 +297,7 @@ export function filterAndSortInstitutions(
 
   const filtered = institutions.filter((institution) =>
     (!normalizedSearch || normalizeForMatch(`${institution.name} ${institution.cue}`).includes(normalizedSearch)) &&
+    equalsAny(institution.id, query.institutionId) &&
     equals(institution.management, query.management) &&
     equals(institution.department, query.department) &&
     equals(institution.locality, query.locality) &&

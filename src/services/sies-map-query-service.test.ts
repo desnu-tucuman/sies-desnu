@@ -6,7 +6,7 @@ describe("acciones del mapa de SIES Responde", () => {
     expect(buildSiesMapUrl({
       intent: "ofertas", searchTerms: ["INGLES"], careerType: "PROFESORADO",
       careerTitle: "INGLES", managementType: "ESTATAL",
-    })).toBe("/mapa?management=ESTATAL");
+    }, ["unit-a", "unit-b"])).toBe("/mapa?institutionId=unit-a&institutionId=unit-b&management=ESTATAL");
   });
 
   it("separa departamento y múltiples tipos de formación sin construir search", () => {

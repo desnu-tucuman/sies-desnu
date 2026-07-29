@@ -67,6 +67,7 @@ export interface SiesConversationalResult {
   totalMatches: number;
   truncated: boolean;
   interpretedQuery: SiesConversationalQuery;
+  institutionIds?: string[];
 }
 
 export interface SiesRespondsMessage {

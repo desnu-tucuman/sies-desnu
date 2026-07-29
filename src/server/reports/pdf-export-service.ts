@@ -136,6 +136,44 @@ export function createInstitutionsPdf(rows: InstitutionDirectoryItem[], metadata
   }, { size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
 }
 
+export function createMapInstitutionsPdf(
+  rows: InstitutionDirectoryItem[],
+  metadata: { filters: string[]; total: number; located: number; unlocated: number },
+): Promise<Buffer> {
+  return collectPdf("mapa-institucional", (doc) => {
+    const pageHeader = (first: boolean) => {
+      let y = brandHeader(doc, !first);
+      doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text("SIES · Mapa institucional", doc.page.margins.left, y);
+      y += first ? 27 : 20;
+      if (first) {
+        doc.font(PDF_FONT_REGULAR).fillColor(MUTED).fontSize(8)
+          .text(`Fecha de generación: ${reportDate()}   |   Instituciones: ${metadata.total}   |   Ubicadas: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
+          .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
+        y += 35;
+      }
+      return listTableHeader(doc, y);
+    };
+    let y = pageHeader(true);
+    rows.forEach((row, index) => {
+      doc.font(PDF_FONT_REGULAR).fontSize(7.2);
+      const values = LIST_COLUMNS.map((column) => row[column.key] || NO_DATA);
+      const heights = values.map((value, columnIndex) => doc.heightOfString(value, { width: LIST_COLUMNS[columnIndex].width - 8 }));
+      const height = Math.max(21, Math.max(...heights) + 9);
+      if (y + height > doc.page.height - 48) {
+        doc.addPage({ size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
+        y = pageHeader(false);
+      }
+      let x = doc.page.margins.left;
+      LIST_COLUMNS.forEach((column, columnIndex) => {
+        doc.rect(x, y, column.width, height).fill(index % 2 ? "#FFFFFF" : LIGHT).strokeColor(LINE).lineWidth(.35).stroke();
+        doc.fillColor("#18313F").text(values[columnIndex], x + 4, y + 5, { width: column.width - 8, height: height - 8, ellipsis: true });
+        x += column.width;
+      });
+      y += height;
+    });
+  }, { size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
+}
+
 const OFFER_COLUMNS = [
   { key: "title", label: "Título", width: 150 }, { key: "institution", label: "Institución o sede", width: 140 },
   { key: "management", label: "Gestión", width: 50 }, { key: "locality", label: "Localidad", width: 70 },

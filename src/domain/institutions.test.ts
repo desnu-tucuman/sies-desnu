@@ -126,4 +126,19 @@ describe("normalización y unión institucional", () => {
     const params = new URLSearchParams("trainingType=DOCENTE&trainingType=MIXTA&trainingType=docente");
     expect(institutionQueryFromParams(params).trainingType).toEqual(["DOCENTE", "MIXTA"]);
   });
+
+  it("filtra múltiples identificadores institucionales con lógica OR", () => {
+    const institutions = createInstitutionDirectoryRows([
+      master({ cue_anexo: "1", nombre_establecimiento: "Institución A" }),
+      master({ cue_anexo: "2", nombre_establecimiento: "Institución B" }),
+      master({ cue_anexo: "3", nombre_establecimiento: "Institución C" }),
+    ]);
+    const params = new URLSearchParams();
+    params.append("institutionId", institutions[0].id);
+    params.append("institutionId", institutions[2].id);
+    params.append("institutionId", institutions[0].id);
+    const query = institutionQueryFromParams(params);
+    expect(query.institutionId).toEqual([institutions[0].id, institutions[2].id]);
+    expect(queryInstitutions(institutions, query).items.map((item) => item.cue)).toEqual(["1", "3"]);
+  });
 });

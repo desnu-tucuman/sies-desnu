@@ -18,14 +18,17 @@ function metric(result: SiesConversationalResult, label: string): number {
 
 function noun(value: number, singular: string, plural: string): string { return value === 1 ? singular : plural; }
 
-function offerActions(result: SiesConversationalResult): SiesRespondsAction[] {
+function resultActions(intent: "offers" | "institutions" | "map", result: SiesConversationalResult): SiesRespondsAction[] {
   const query = result.interpretedQuery;
+  const mapUrl = buildSiesMapUrl(query, result.institutionIds);
+  if (intent === "map") return [action("Abrir resultados en el mapa", mapUrl, "map"), action("Ver instituciones", "/instituciones", "institutions")];
+  if (intent === "institutions") return [action("Ampliar en Instituciones", "/instituciones", "institutions"), action("Consultar el mapa", mapUrl, "map")];
   const params = new URLSearchParams();
   if (query.careerTitle) params.set("search", query.careerTitle);
   if (query.managementType) params.set("management", query.managementType);
   if (query.department) params.set("department", query.department);
   if (query.locality) params.set("locality", query.locality);
-  return [action("Ampliar en Ofertas", `/ofertas${params.size ? `?${params}` : ""}`, "offers"), action("Ver instituciones", "/instituciones", "institutions"), action("Consultar el mapa", buildSiesMapUrl(query), "map")];
+  return [action("Ampliar en Ofertas", `/ofertas${params.size ? `?${params}` : ""}`, "offers"), action("Ver instituciones", "/instituciones", "institutions"), action("Consultar el mapa", mapUrl, "map")];
 }
 
 function responseWithResult(intent: SiesRespondsResponse["intent"], text: string, result: SiesConversationalResult, actions: SiesRespondsAction[]): SiesRespondsResponse {
@@ -50,7 +53,7 @@ export async function answerSiesRespondsQuery(input: SiesRespondsQuery): Promise
       const summary = result.totalMatches
         ? `Encontré ${metric(result, "Ofertas")} ofertas en ${metric(result, "Instituciones")} instituciones y ${metric(result, "Departamentos")} departamentos para el año de referencia ${dataset.referenceYear}.`
         : `No encontré ofertas que coincidan con la consulta en los datos consolidados de ${dataset.referenceYear}. Puedes ampliar o reformular los términos.`;
-      return responseWithResult("offers", summary, result, offerActions(result));
+      return responseWithResult("offers", summary, result, resultActions("offers", result));
     }
     if (structured.intent === "instituciones" || structured.intent === "territorio") {
       const directory = await getInstitutionDirectory();
@@ -60,10 +63,7 @@ export async function answerSiesRespondsQuery(input: SiesRespondsQuery): Promise
         ? `Encontré ${metric(result, "Instituciones")} instituciones en ${metric(result, "Departamentos")} departamentos y ${metric(result, "Localidades")} localidades.`
         : "No encontré instituciones que coincidan con todos los términos indicados. Puedes ampliar o reformular la consulta.";
       const isMap = structured.intent === "territorio";
-      const mapUrl = buildSiesMapUrl(result.interpretedQuery);
-      const actions = isMap
-        ? [action("Abrir resultados en el mapa", mapUrl, "map"), action("Ver instituciones", "/instituciones", "institutions")]
-        : [action("Ampliar en Instituciones", "/instituciones", "institutions"), action("Consultar el mapa", mapUrl, "map")];
+      const actions = resultActions(isMap ? "map" : "institutions", result);
       return responseWithResult(isMap ? "map" : "institutions", summary, result, actions);
     }
     if (structured.intent === "autoridades") {
