@@ -140,6 +140,23 @@ h1 { margin: 0; color: var(--blue); font-size: clamp(2.2rem, 6vw, 4.4rem); line-
 .userMessage > span { color: #a9dde0; }
 .assistantMessage { border: 1px solid #cfe0e4; border-bottom-left-radius: 3px; background: white; }
 .assistantMessage > span { color: var(--turquoise); }
+.conversationalResult { margin-top: 15px; }
+.conversationalMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.conversationalMetrics div { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #f5f9fa; text-align: center; }
+.conversationalMetrics strong { display: block; color: var(--blue); font-size: 1.3rem; }
+.conversationalMetrics span { color: var(--muted); font-size: .68rem; }
+.conversationalYear { margin-top: 9px !important; color: var(--muted); font-size: .72rem; }
+.conversationalGroups { display: grid; gap: 7px; margin-top: 12px; }
+.conversationalGroups details { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.conversationalGroups summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; color: var(--blue); cursor: pointer; font-size: .82rem; font-weight: 800; }
+.conversationalGroups summary:hover { background: #eff8f8; }
+.conversationalGroups summary strong { min-width: 27px; padding: 3px 7px; border-radius: 999px; color: white; background: var(--turquoise); text-align: center; font-size: .68rem; }
+.conversationalGroups ul { margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.conversationalGroups li { padding: 9px 12px; border-bottom: 1px solid #edf2f3; }
+.conversationalGroups li:last-child { border-bottom: 0; }
+.conversationalGroups li a, .conversationalGroups li strong { display: block; color: var(--blue); font-size: .8rem; font-weight: 750; }
+.conversationalGroups li span { display: block; margin-top: 2px; color: var(--muted); font-size: .7rem; line-height: 1.35; }
+.conversationalLimit, .noConversationalResults { margin-top: 10px !important; padding: 9px 11px; border-radius: 7px; color: var(--muted); background: #f4f7f8; font-size: .72rem; }
 .respondsActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
 .respondsActions a { padding: 7px 10px; border: 1px solid var(--turquoise); border-radius: 7px; color: var(--blue); font-size: .78rem; font-weight: 800; text-decoration: none; }
 .respondsActions a:first-child { color: white; background: var(--turquoise); }
@@ -339,6 +356,7 @@ tbody tr:hover { background: #f1f9fa; }
   .respondsPageHeading { flex-direction: column; }
   .respondsPhaseBadge { align-self: flex-start; }
   .respondsMessage { max-width: 90%; }
+  .conversationalMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 430px) {
   .metrics, .shortcutGrid, .filters, .detailGrid, .offerColumns, .offerMetrics, .authorityMetrics { grid-template-columns: 1fr; }
@@ -353,4 +371,5 @@ tbody tr:hover { background: #f1f9fa; }
   .respondsMessage { max-width: 96%; }
   .respondsFloating { right: 10px; bottom: 10px; }
   .respondsFloatingButton { min-height: 44px; padding: 9px 13px; font-size: .82rem; }
+  .messageHistory > div:last-child { height: 64px; }
 }

@@ -2,30 +2,44 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { SiesRespondsMessage, SiesRespondsNavigationContext } from "@/domain/sies-responds";
-import { routeSiesRespondsQuery } from "@/services/sies-responds-router-service";
+import type { SiesConversationalResult, SiesRespondsMessage, SiesRespondsNavigationContext, SiesRespondsResponse } from "@/domain/sies-responds";
 import { SiesRespondsPromptInput } from "./prompt-input";
 import { SiesRespondsSuggestions } from "./suggestions";
 
-function initialMessages(query: string, context: SiesRespondsNavigationContext): SiesRespondsMessage[] {
-  if (!query.trim()) return [];
-  const response = routeSiesRespondsQuery({ text: query, context });
+function initialMessages(query: string, response?: SiesRespondsResponse): SiesRespondsMessage[] {
+  if (!query.trim() || !response) return [];
   return [
     { id: "initial-user", role: "user", text: query.trim() },
     { id: "initial-assistant", role: "assistant", text: response.text, response },
   ];
 }
 
-export function SiesRespondsConversation({ initialQuery, context }: { initialQuery: string; context: SiesRespondsNavigationContext }) {
+function ConversationResult({ result }: { result: SiesConversationalResult }) {
+  return <div className="conversationalResult">
+    <div className="conversationalMetrics">{result.metrics.map((metric) => <div key={metric.label}><strong>{metric.value}</strong><span>{metric.label}</span></div>)}</div>
+    {result.referenceYear ? <p className="conversationalYear">Año de referencia: {result.referenceYear}</p> : null}
+    {result.groups.length ? <div className="conversationalGroups">{result.groups.slice(0, 20).map((group) => <details key={group.label} open={result.groups.length <= 5}>
+      <summary><span>{group.label}</span><strong>{group.count}</strong></summary>
+      <ul>{group.items.map((item, index) => <li key={`${item.label}-${index}`}><div>{item.href ? <Link href={item.href}>{item.label}</Link> : <strong>{item.label}</strong>}{item.detail ? <span>{item.detail}</span> : null}</div></li>)}</ul>
+    </details>)}</div> : <p className="noConversationalResults">No hay resultados para agrupar con los criterios interpretados.</p>}
+    {result.truncated ? <p className="conversationalLimit">Se muestra una selección del resultado. Usa los accesos siguientes para consultar el listado completo.</p> : null}
+  </div>;
+}
+
+export function SiesRespondsConversation({ initialQuery, initialResponse, context }: { initialQuery: string; initialResponse?: SiesRespondsResponse; context: SiesRespondsNavigationContext }) {
   const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState(() => initialMessages(initialQuery, context));
+  const [messages, setMessages] = useState(() => initialMessages(initialQuery, initialResponse));
   const [processing, setProcessing] = useState(false);
   const sequence = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
+  const initialRender = useRef(true);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [messages, processing]);
+  useEffect(() => {
+    if (initialRender.current) { initialRender.current = false; return; }
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages, processing]);
 
-  const submit = () => {
+  const submit = async () => {
     const text = query.trim();
     if (!text || processing) return;
     sequence.current += 1;
@@ -34,11 +48,16 @@ export function SiesRespondsConversation({ initialQuery, context }: { initialQue
     setQuery("");
     setProcessing(true);
     window.history.replaceState(null, "", `/responde?q=${encodeURIComponent(text)}`);
-    window.setTimeout(() => {
-      const response = routeSiesRespondsQuery({ text, context });
+    try {
+      const request = await fetch("/api/responde", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, context }) });
+      if (!request.ok) throw new Error(`SIES Responde respondió ${request.status}`);
+      const response = await request.json() as SiesRespondsResponse;
       setMessages((current) => [...current, { id: `assistant-${id}`, role: "assistant", text: response.text, response }]);
+    } catch {
+      setMessages((current) => [...current, { id: `assistant-${id}`, role: "assistant", text: "No pude consultar los datos del SIES en este momento. Intenta nuevamente en unos instantes." }]);
+    } finally {
       setProcessing(false);
-    }, 350);
+    }
   };
 
   const reset = () => {
@@ -51,6 +70,7 @@ export function SiesRespondsConversation({ initialQuery, context }: { initialQue
     <div className="messageHistory" aria-live="polite" aria-busy={processing}>
       {!messages.length ? <div className="respondsInitialState"><h2>¿Qué información necesitas?</h2><p>Puedo orientarte hacia instituciones, oferta académica, autoridades, mapa o listados.</p><SiesRespondsSuggestions onSelect={setQuery} /></div> : messages.map((message) => <article className={`respondsMessage ${message.role === "user" ? "userMessage" : "assistantMessage"}`} key={message.id}>
         <span>{message.role === "user" ? "Tú" : "SIES Responde"}</span><p>{message.text}</p>
+        {message.response?.result ? <ConversationResult result={message.response.result} /> : null}
         {message.response?.actions.length ? <div className="respondsActions">{message.response.actions.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}</div> : null}
       </article>)}
       {processing ? <div className="processingMessage"><span className="spinner" aria-hidden="true" /> Analizando el tema de la consulta…</div> : null}

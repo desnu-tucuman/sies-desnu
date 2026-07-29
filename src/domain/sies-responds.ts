@@ -22,6 +22,49 @@ export interface SiesRespondsResponse {
   intent: SiesRespondsIntent;
   text: string;
   actions: SiesRespondsAction[];
+  result?: SiesConversationalResult;
+}
+
+export type SiesConversationalIntent = "ofertas" | "instituciones" | "autoridades" | "territorio" | "listados" | "unknown";
+
+export interface SiesConversationalQuery {
+  intent: SiesConversationalIntent;
+  searchTerms: string[];
+  careerType?: "PROFESORADO" | "TECNICATURA";
+  careerTitle?: string;
+  institutionName?: string;
+  managementType?: "ESTATAL" | "PRIVADA";
+  trainingTypes?: string[];
+  department?: string;
+  locality?: string;
+  requestedGrouping?: "department" | "locality" | "institution";
+  requestedMetric?: "count";
+}
+
+export interface SiesConversationalMetric {
+  label: string;
+  value: number;
+}
+
+export interface SiesConversationalResultItem {
+  label: string;
+  detail?: string;
+  href?: string;
+}
+
+export interface SiesConversationalResultGroup {
+  label: string;
+  count: number;
+  items: SiesConversationalResultItem[];
+}
+
+export interface SiesConversationalResult {
+  referenceYear?: string;
+  metrics: SiesConversationalMetric[];
+  groups: SiesConversationalResultGroup[];
+  totalMatches: number;
+  truncated: boolean;
+  interpretedQuery: SiesConversationalQuery;
 }
 
 export interface SiesRespondsMessage {
