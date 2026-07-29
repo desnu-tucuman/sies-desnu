@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getGeographicInstitutions, createMapInstitutionsPdf } = vi.hoisted(() => ({
-  getGeographicInstitutions: vi.fn(), createMapInstitutionsPdf: vi.fn(async () => Buffer.from("PDF")),
+const { getGeographicInstitutions, createMapInstitutionsPdf, createStaticInstitutionMap } = vi.hoisted(() => ({
+  getGeographicInstitutions: vi.fn(), createMapInstitutionsPdf: vi.fn(async () => Buffer.from("PDF")), createStaticInstitutionMap: vi.fn(),
 }));
 
 vi.mock("@/server/services/geographic-institutions-service", () => ({ getGeographicInstitutions }));
 vi.mock("./pdf-export-service", () => ({ createMapInstitutionsPdf, logPdfStage: vi.fn() }));
+vi.mock("@/server/services/static-map-service", () => ({ createStaticInstitutionMap }));
 vi.mock("server-only", () => ({}));
 
 import { createMapCsvReport, createMapPdfReport } from "./map-reports-service";
@@ -22,7 +23,10 @@ const dataset = (rows = [institution("a", "1", "Institución incluida")]) => ({
 });
 
 describe("reportes filtrados del mapa", () => {
-  beforeEach(() => { vi.clearAllMocks(); getGeographicInstitutions.mockResolvedValue(dataset()); });
+  beforeEach(() => {
+    vi.clearAllMocks(); getGeographicInstitutions.mockResolvedValue(dataset());
+    createStaticInstitutionMap.mockResolvedValue({ viewport: { width: 773, height: 250 }, tiles: [], clusters: [], attribution: "OpenStreetMap" });
+  });
 
   it.each([
     ["sin filtros", {}],
@@ -50,6 +54,7 @@ describe("reportes filtrados del mapa", () => {
     expect(createMapInstitutionsPdf).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
       filters: ["Departamento: CAPITAL", "Tipo de formación institucional: DOCENTE, MIXTA"],
       total: 1, located: 1, unlocated: 0,
+      map: expect.objectContaining({ attribution: "OpenStreetMap" }),
     }));
   });
 });

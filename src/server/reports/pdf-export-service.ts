@@ -6,6 +6,7 @@ import PDFDocument from "pdfkit";
 import type { AcademicOfferItem } from "@/domain/academic-offer";
 import type { AuthorityDirectoryItem } from "@/domain/authorities-directory";
 import type { HierarchicalOfferBlock } from "@/server/services/list-reports-service";
+import type { StaticInstitutionMap } from "@/server/services/static-map-service";
 import { NO_DATA, type InstitutionDirectoryItem, type InstitutionView } from "@/domain/institutions";
 import { reportDate } from "./report-utils";
 
@@ -138,9 +139,32 @@ export function createInstitutionsPdf(rows: InstitutionDirectoryItem[], metadata
 
 export function createMapInstitutionsPdf(
   rows: InstitutionDirectoryItem[],
-  metadata: { filters: string[]; total: number; located: number; unlocated: number },
+  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap },
 ): Promise<Buffer> {
   return collectPdf("mapa-institucional", (doc) => {
+    const drawMap = (y: number) => {
+      const { map } = metadata;
+      const x = doc.page.margins.left;
+      doc.save().rect(x, y, map.viewport.width, map.viewport.height).clip();
+      for (const tile of map.tiles) doc.image(tile.body, x + tile.x, y + tile.y, { width: tile.width, height: tile.height });
+      for (const cluster of map.clusters) {
+        const markerX = x + cluster.x; const markerY = y + cluster.y;
+        if (cluster.items.length > 1) {
+          doc.circle(markerX, markerY, 14).fillAndStroke("#FFFFFF", TURQUOISE).lineWidth(3);
+          doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(8).text(String(cluster.items.length), markerX - 12, markerY - 4, { width: 24, align: "center" });
+        } else {
+          const siteType = cluster.items[0].siteType.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+          const color = siteType.includes("EXTENSION") ? TURQUOISE : siteType.includes("ANEXO") ? ORANGE : BLUE;
+          doc.circle(markerX, markerY, 7).fillAndStroke(color, "#FFFFFF").lineWidth(2);
+        }
+      }
+      doc.restore();
+      const attributionWidth = 180;
+      doc.rect(x + map.viewport.width - attributionWidth, y + map.viewport.height - 15, attributionWidth, 15).fillOpacity(.88).fill("#FFFFFF").fillOpacity(1);
+      doc.font(PDF_FONT_REGULAR).fillColor("#364A54").fontSize(6.3).text(map.attribution, x + map.viewport.width - attributionWidth + 5, y + map.viewport.height - 11, { width: attributionWidth - 10, align: "right" });
+      doc.rect(x, y, map.viewport.width, map.viewport.height).lineWidth(.6).strokeColor(LINE).stroke();
+      return y + map.viewport.height + 12;
+    };
     const pageHeader = (first: boolean) => {
       let y = brandHeader(doc, !first);
       doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text("SIES · Mapa institucional", doc.page.margins.left, y);
@@ -150,6 +174,7 @@ export function createMapInstitutionsPdf(
           .text(`Fecha de generación: ${reportDate()}   |   Instituciones: ${metadata.total}   |   Ubicadas: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
           .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
         y += 35;
+        y = drawMap(y);
       }
       return listTableHeader(doc, y);
     };

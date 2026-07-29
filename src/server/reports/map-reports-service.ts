@@ -2,6 +2,7 @@ import "server-only";
 
 import type { InstitutionQuery } from "@/domain/institutions";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
+import { createStaticInstitutionMap } from "@/server/services/static-map-service";
 import { createExcelCsv } from "./csv-export-service";
 import { createMapInstitutionsPdf, logPdfStage } from "./pdf-export-service";
 import type { GeneratedReport } from "./reports-service";
@@ -35,12 +36,13 @@ export async function createMapPdfReport(query: InstitutionQuery): Promise<Gener
   logPdfStage("mapa-institucional", "inicio");
   const dataset = await getGeographicInstitutions(query);
   if (!dataset.total) throw new EmptyMapExportError();
+  const map = await createStaticInstitutionMap(dataset.located);
   const rows = [...dataset.located, ...dataset.unlocated];
   logPdfStage("mapa-institucional", "carga de datos", { records: rows.length });
   return {
     body: await createMapInstitutionsPdf(rows, {
       filters: appliedFilters(query), total: dataset.total,
-      located: dataset.located.length, unlocated: dataset.unlocated.length,
+      located: dataset.located.length, unlocated: dataset.unlocated.length, map,
     }),
     contentType: "application/pdf", filename: `sies_mapa_institucional_${dateStamp()}.pdf`,
   };
