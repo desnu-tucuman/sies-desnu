@@ -1,5 +1,6 @@
 :root {
   --blue: #123e68;
+  --blue-light: #155fa4;
   --turquoise: #087f8c;
   --orange: #dc6b22;
   --ink: #18313f;
@@ -312,21 +313,21 @@ tbody tr:hover { background: #f1f9fa; }
 .mapLegend { position: absolute; z-index: 500; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 11px; padding: 9px 12px; border: 1px solid rgb(18 62 104 / 14%); border-radius: 8px; background: rgb(255 255 255 / 94%); box-shadow: 0 4px 14px rgb(18 62 104 / 12%); font-size: .72rem; font-weight: 700; }
 .mapLegend span { display: inline-flex; align-items: center; gap: 5px; }
 .mapLegend i { width: 10px; height: 10px; border-radius: 50%; }
-.legendHeadquarters { background: var(--blue); }
-.legendAnnex { background: var(--orange); }
-.legendExtension { background: var(--turquoise); }
+.legendState { background: var(--blue); }
+.legendPrivate { background: var(--blue-light); }
+.legendUnknown { background: var(--muted); }
 .sies-map-marker { background: transparent; border: 0; }
 .sies-map-marker span { position: relative; display: block; width: 24px; height: 24px; transform: rotate(45deg); border: 3px solid white; border-radius: 50% 50% 50% 0; box-shadow: 0 2px 7px rgb(0 0 0 / 35%); }
 .sies-map-marker span::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: white; }
-.marker-headquarters span { background: var(--blue); }
-.marker-annex span { background: var(--orange); }
-.marker-extension span { background: var(--turquoise); }
+.marker-state span { background: var(--blue); }
+.marker-private span { background: var(--blue-light); }
+.marker-unknown span { background: var(--muted); }
 .mapPopup { font-family: "Roboto", Arial, sans-serif; }
 .mapPopup h3 { margin: 0 0 10px; color: var(--blue); font-size: 1rem; line-height: 1.25; }
 .mapPopup p { margin: 4px 0; color: var(--ink); font-size: .78rem; line-height: 1.35; }
 .mapPopup a { display: inline-block; margin-top: 10px; color: var(--blue); font-weight: 800; }
-.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { color: white; background: var(--blue); font-family: "Roboto", Arial, sans-serif; font-weight: 700; }
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgb(8 127 140 / 35%); }
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { color: white; background: var(--muted); font-family: "Roboto", Arial, sans-serif; font-weight: 700; }
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgb(92 111 121 / 35%); }
 .unlocatedPanel { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: white; }
 .unlocatedPanel summary { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; color: var(--blue); cursor: pointer; font-weight: 800; }
 .unlocatedPanel summary:hover { background: #f3f8f9; }

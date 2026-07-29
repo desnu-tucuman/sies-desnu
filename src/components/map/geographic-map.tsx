@@ -1,24 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { TUCUMAN_CENTER, type LocatedInstitution } from "@/domain/geography";
+import { managementMarkerKind } from "@/domain/map-marker-style";
 import { getMapViewportStrategy } from "@/domain/map-viewport";
+import { MapPopupContent } from "./map-popup-content";
 
 const iconCache = new Map<string, L.DivIcon>();
 
-function markerKind(siteType: string): string {
-  const normalized = siteType.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-  if (normalized.includes("EXTENSION")) return "extension";
-  if (normalized.includes("ANEXO")) return "annex";
-  return "headquarters";
-}
-
-function markerIcon(siteType: string): L.DivIcon {
-  const kind = markerKind(siteType);
+function markerIcon(management: string): L.DivIcon {
+  const kind = managementMarkerKind(management);
   const cached = iconCache.get(kind);
   if (cached) return cached;
   const icon = L.divIcon({
@@ -57,17 +51,13 @@ function FitFilteredBounds({ institutions, singleMarker }: { institutions: Locat
   return null;
 }
 
-function PopupValue({ label, value }: { label: string; value: string }) {
-  return <p><strong>{label}:</strong> {value || "No hay datos"}</p>;
-}
-
 function InstitutionMarker({ institution, markerRef }: { institution: LocatedInstitution; markerRef?: React.Ref<L.Marker> }) {
   const map = useMap();
   return (
     <Marker
       ref={markerRef}
       position={[institution.latitude, institution.longitude]}
-      icon={markerIcon(institution.siteType)}
+      icon={markerIcon(institution.management)}
       eventHandlers={{
         click: (event) => {
           const marker = event.target as L.Marker;
@@ -77,17 +67,7 @@ function InstitutionMarker({ institution, markerRef }: { institution: LocatedIns
       }}
     >
       <Popup minWidth={250} autoPanPadding={[36, 36]}>
-        <div className="mapPopup">
-          <h3>{institution.name}</h3>
-          <PopupValue label="CUE" value={institution.cue} />
-          <PopupValue label="Gestión" value={institution.management} />
-          <PopupValue label="Tipo de sede" value={institution.siteType} />
-          <PopupValue label="Formación institucional" value={institution.baseTrainingType} />
-          <PopupValue label="Localidad" value={institution.locality} />
-          <PopupValue label="Departamento" value={institution.department} />
-          <PopupValue label="Dirección" value={institution.address} />
-          <Link href={`/instituciones/${institution.id}`}>Ver ficha institucional →</Link>
-        </div>
+        <MapPopupContent institution={institution} />
       </Popup>
     </Marker>
   );

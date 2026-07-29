@@ -46,12 +46,16 @@ describe("reportes filtrados del mapa", () => {
     expect(text.startsWith("\uFEFF")).toBe(true);
     expect(text).toContain("Institución incluida");
     expect(text).not.toContain("Institución excluida");
+    expect(text).toContain('"Tipo de sede"');
+    expect(text).toContain('"SEDE"');
     expect(text).toContain('"Latitud";"Longitud"');
   });
 
   it("incluye filtros y contadores activos en el PDF", async () => {
     await createMapPdfReport({ department: "CAPITAL", trainingType: ["DOCENTE", "MIXTA"] });
-    expect(createMapInstitutionsPdf).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
+    expect(createMapInstitutionsPdf).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ siteType: "SEDE" }),
+    ]), expect.objectContaining({
       filters: ["Departamento: CAPITAL", "Tipo de formación institucional: DOCENTE, MIXTA"],
       total: 1, located: 1, unlocated: 0,
       map: expect.objectContaining({ attribution: "OpenStreetMap" }),

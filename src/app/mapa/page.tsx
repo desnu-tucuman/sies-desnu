@@ -3,6 +3,7 @@ import { MultiSelectFilter } from "@/components/multi-select-filter";
 import { EmptyState, SourceError } from "@/components/ui";
 import { MapLoader } from "@/components/map/map-loader";
 import { MapExportActions } from "@/components/map/map-export-actions";
+import { MapManagementLegend } from "@/components/map/map-management-legend";
 import { institutionQueryFromParams } from "@/domain/institutions";
 import { toUrlSearchParams, type SearchParamsRecord } from "@/domain/url-params";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
@@ -44,7 +45,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         <article><span>Sin coordenadas válidas</span><strong>{dataset.unlocated.length}</strong></article>
       </section>
 
-      {dataset.located.length ? <section className="mapFrame" aria-label="Mapa de instituciones"><div className="mapLegend"><span><i className="legendHeadquarters" /> Sede</span><span><i className="legendAnnex" /> Anexo</span><span><i className="legendExtension" /> Extensión áulica</span></div><MapLoader institutions={dataset.located} /></section> : <EmptyState>No hay puntos con coordenadas válidas para los filtros seleccionados.</EmptyState>}
+      {dataset.located.length ? <section className="mapFrame" aria-label="Mapa de instituciones"><MapManagementLegend managementValues={dataset.located.map((institution) => institution.management)} /><MapLoader institutions={dataset.located} /></section> : <EmptyState>No hay puntos con coordenadas válidas para los filtros seleccionados.</EmptyState>}
 
       <details className="unlocatedPanel">
         <summary>Ver registros sin ubicación <span>{dataset.unlocated.length}</span></summary>

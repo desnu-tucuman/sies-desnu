@@ -114,6 +114,14 @@ describe("normalización y unión institucional", () => {
     expect(rows.map((row) => row.siteType)).toEqual(["Sede", "Anexo", "Extensión Áulica"]);
   });
 
+  it("mantiene operativo el filtro por tipo de sede", () => {
+    const rows = createInstitutionDirectoryRows([
+      master({ cue_anexo: "10", nombre_establecimiento: "Institución Sede", tipo_sede: "Sede" }),
+      master({ cue_anexo: "11", nombre_establecimiento: "Institución Anexo", tipo_sede: "Anexo" }),
+    ]);
+    expect(queryInstitutions(rows, { siteType: "anexo" }).items.map((row) => row.siteType)).toEqual(["Anexo"]);
+  });
+
   it("interpreta para pantalla y exportación los mismos filtros", () => {
     const params = new URLSearchParams("search=Santa+Ana&management=Estatal&department=RIO+CHICO&siteType=Extensi%C3%B3n+%C3%81ulica&trainingType=T%C3%89CNICA");
     expect(institutionQueryFromParams(params)).toMatchObject({
