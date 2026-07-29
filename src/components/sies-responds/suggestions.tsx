@@ -1,11 +1,11 @@
 "use client";
 
 export const SIES_RESPONDS_SUGGESTIONS = [
-  "¿Dónde se dicta el Profesorado de Inglés?",
-  "Institutos con formación docente en Capital.",
-  "Tecnicaturas en informática en el sur de Tucumán.",
-  "¿Quién dirige el IES Aguilares?",
-  "¿Qué carreras se dictan en Monteros?",
+  "¿Cuántos egresados hubo en Farmacia?",
+  "¿Qué tecnicaturas se dictan en el sur?",
+  "¿Cuántos ingresantes tuvieron los profesorados en 2025?",
+  "¿Qué institutos estatales tienen carreras de Enfermería?",
+  "¿Qué carreras no registraron egresados?",
 ];
 
 export function SiesRespondsSuggestions({ onSelect, compact = false }: { onSelect: (question: string) => void; compact?: boolean }) {

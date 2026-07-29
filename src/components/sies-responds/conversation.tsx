@@ -18,6 +18,10 @@ function ConversationResult({ result }: { result: SiesConversationalResult }) {
   return <div className="conversationalResult">
     <div className="conversationalMetrics">{result.metrics.map((metric) => <div key={metric.label}><strong>{metric.value}</strong><span>{metric.label}</span></div>)}</div>
     {result.referenceYear ? <p className="conversationalYear">Año de referencia: {result.referenceYear}</p> : null}
+    {result.appliedFilters?.length ? <p className="conversationalYear">Filtros aplicados: {result.appliedFilters.join(" · ")}</p> : null}
+    {result.includedTitles?.length ? <details className="conversationalDetails"><summary>Títulos incluidos ({result.includedTitles.length})</summary><ul>{result.includedTitles.map((title) => <li key={title}>{title}</li>)}</ul></details> : null}
+    {result.series?.length ? <div className="tableScroll"><table><thead><tr><th>Año</th><th>Ingresantes</th><th>Matrícula</th><th>Egresados</th></tr></thead><tbody>{result.series.map((row) => <tr key={row.year}><td>{row.year}</td><td>{row.entrants}</td><td>{row.enrollment}</td><td>{row.graduates}</td></tr>)}</tbody></table></div> : null}
+    {result.source ? <p className="conversationalYear">Fuente: {result.source}</p> : null}
     {result.groups.length ? <div className="conversationalGroups">{result.groups.slice(0, 20).map((group) => <details key={group.label} open={result.groups.length <= 5}>
       <summary><span>{group.label}</span><strong>{group.count}</strong></summary>
       <ul>{group.items.map((item, index) => <li key={`${item.label}-${index}`}><div>{item.href ? <Link href={item.href}>{item.label}</Link> : <strong>{item.label}</strong>}{item.detail ? <span>{item.detail}</span> : null}</div></li>)}</ul>

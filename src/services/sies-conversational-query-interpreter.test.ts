@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { interpretSiesConversationalQuery } from "./sies-conversational-query-interpreter";
 
 describe("intérprete estructurado de SIES Responde", () => {
+  it("detecta indicadores académicos, año y modo", () => {
+    expect(interpretSiesConversationalQuery("¿Cuántos egresados hubo en Farmacia en 2025?")).toMatchObject({ intent: "indicadores_academicos", academicIndicator: "graduates", year: "2025", searchTerms: ["FARMACIA"], analysisMode: "total" });
+  });
   it("interpreta profesorados de inglés agrupados por departamento", () => {
     expect(interpretSiesConversationalQuery("¿En qué departamentos hay profesorados de inglés?")).toMatchObject({
       intent: "ofertas", careerType: "PROFESORADO", searchTerms: ["INGLES"], requestedGrouping: "department", requestedMetric: "count",

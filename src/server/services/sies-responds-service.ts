@@ -3,6 +3,8 @@ import "server-only";
 import { normalizeForMatch, safeText } from "@/domain/institutions";
 import type { SiesConversationalResult, SiesRespondsAction, SiesRespondsQuery, SiesRespondsResponse } from "@/domain/sies-responds";
 import { getAcademicOfferDataset } from "@/server/services/academic-offer-service";
+import { getAcademicIndicatorDataset } from "@/server/services/academic-indicators-service";
+import { resolveAcademicIndicators } from "@/domain/academic-indicators";
 import { getAuthoritiesDirectory } from "@/server/services/authorities-directory-service";
 import { getInstitutionDirectory } from "@/server/services/institution-directory-service";
 import { interpretSiesConversationalQuery } from "@/services/sies-conversational-query-interpreter";
@@ -46,6 +48,19 @@ export async function answerSiesRespondsQuery(input: SiesRespondsQuery): Promise
   });
   trace({ stage: "interpreted", fallbackReason: null });
   try {
+    if (structured.intent === "indicadores_academicos") {
+      const dataset = await getAcademicIndicatorDataset();
+      const result = resolveAcademicIndicators(text, structured, dataset.rows, dataset.referenceYear);
+      const indicator = result.metrics[0];
+      const firstYear = result.series?.[0]?.year;
+      const accumulated = result.series?.reduce((sum, row) => sum + (structured.academicIndicator === "entrants" ? row.entrants : structured.academicIndicator === "enrollment" ? row.enrollment : row.graduates), 0) ?? 0;
+      const period = !structured.year && firstYear && firstYear !== result.referenceYear ? ` En el período ${firstYear}–${result.referenceYear} se registraron ${accumulated} en total.` : "";
+      const summary = result.totalMatches
+        ? `En ${result.referenceYear} hubo ${indicator.value} ${indicator.label.toLowerCase()} en ${result.totalMatches} ofertas de ${metric(result, "Instituciones")} instituciones.${period}`
+        : `No encontré registros para el indicador y los filtros interpretados en ${result.referenceYear}.`;
+      trace({ stage: "data-filtered", source: "CARRERAS_DETALLE", sourceOffersCount: dataset.rows.length, filteredResultsCount: result.totalMatches, filters: result.appliedFilters, fallbackReason: null });
+      return responseWithResult("offers", summary, result, resultActions("offers", result));
+    }
     if (structured.intent === "ofertas") {
       const dataset = await getAcademicOfferDataset();
       const result = resolveOfferConversation(text, structured, dataset.offers, dataset.referenceYear);

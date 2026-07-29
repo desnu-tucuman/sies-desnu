@@ -25,7 +25,8 @@ export interface SiesRespondsResponse {
   result?: SiesConversationalResult;
 }
 
-export type SiesConversationalIntent = "ofertas" | "instituciones" | "autoridades" | "territorio" | "listados" | "unknown";
+export type SiesConversationalIntent = "ofertas" | "instituciones" | "autoridades" | "territorio" | "listados" | "indicadores_academicos" | "unknown";
+export type AcademicIndicator = "graduates" | "entrants" | "enrollment";
 
 export interface SiesConversationalQuery {
   intent: SiesConversationalIntent;
@@ -41,6 +42,10 @@ export interface SiesConversationalQuery {
   siteType?: string;
   requestedGrouping?: "department" | "locality" | "institution";
   requestedMetric?: "count";
+  academicIndicator?: AcademicIndicator;
+  year?: string;
+  region?: string;
+  analysisMode?: "total" | "average" | "evolution" | "maximum" | "zero";
 }
 
 export interface SiesConversationalMetric {
@@ -68,6 +73,10 @@ export interface SiesConversationalResult {
   truncated: boolean;
   interpretedQuery: SiesConversationalQuery;
   institutionIds?: string[];
+  source?: string;
+  appliedFilters?: string[];
+  includedTitles?: string[];
+  series?: Array<{ year: string; entrants: number; enrollment: number; graduates: number }>;
 }
 
 export interface SiesRespondsMessage {
