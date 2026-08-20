@@ -93,6 +93,11 @@ describe("normalización y unión institucional", () => {
     expect(result.page).toBe(1);
   });
 
+  it("permite buscar una institución por CUI", () => {
+    const rows = createInstitutionDirectoryRows([master({ cui: "CUITERRITORIAL123", nombre_establecimiento: "Institución por CUI" })]);
+    expect(queryInstitutions(rows, { search: "cuiterritorial123" }).total).toBe(1);
+  });
+
   it("deduplica variantes del filtro sin modificar el valor original mostrado", () => {
     const rows = createInstitutionDirectoryRows([
       master({ cue_anexo: "1", nombre_establecimiento: "Institución A", tipo_formacion_base: "TÉCNICA" }),

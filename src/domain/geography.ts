@@ -13,12 +13,30 @@ export type CoordinateIssue = "missing" | "invalid" | "outside_tucuman_range";
 export interface LocatedInstitution extends InstitutionDirectoryItem {
   latitude: number;
   longitude: number;
+  mapMode?: "institution" | "offer";
+  responsibleInstitution?: string;
+  offerType?: string;
+  careers?: string[];
+  matchedCareers?: string[];
+  enrollment?: string;
+  entrants?: string;
+  graduates?: string;
+  referenceYear?: string;
 }
 
 export interface UnlocatedInstitution extends InstitutionDirectoryItem {
   coordinateIssue: CoordinateIssue;
   rawLatitude: string;
   rawLongitude: string;
+  mapMode?: "institution" | "offer";
+  responsibleInstitution?: string;
+  offerType?: string;
+  careers?: string[];
+  matchedCareers?: string[];
+  enrollment?: string;
+  entrants?: string;
+  graduates?: string;
+  referenceYear?: string;
 }
 
 export type CoordinateValidation =
@@ -57,4 +75,3 @@ export function validateInstitutionCoordinates(
 
   return { valid: true, latitude, longitude };
 }
-

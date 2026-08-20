@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { InstitutionQuery } from "@/domain/institutions";
+import type { MapQuery } from "@/domain/geographic-offers";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
+import { getGeographicOffers } from "@/server/services/geographic-offers-service";
 import { createStaticInstitutionMap } from "@/server/services/static-map-service";
 import { createExcelCsv } from "./csv-export-service";
 import { createMapInstitutionsPdf, logPdfStage } from "./pdf-export-service";
@@ -15,9 +16,30 @@ export class EmptyMapExportError extends Error {
   }
 }
 
-export async function createMapCsvReport(query: InstitutionQuery): Promise<GeneratedReport> {
-  const dataset = await getGeographicInstitutions(query);
+async function mapDataset(query: MapQuery) {
+  return query.view === "offer"
+    ? getGeographicOffers(query)
+    : getGeographicInstitutions(query);
+}
+
+function mapFilters(query: MapQuery): string[] {
+  const filters = appliedFilters(query);
+  if (query.offerType) filters.push(`Tipo de oferta: ${query.offerType}`);
+  filters.unshift(`Vista: ${query.view === "offer" ? "Oferta 2026" : "Instituciones"}`);
+  return filters;
+}
+
+export async function createMapCsvReport(query: MapQuery): Promise<GeneratedReport> {
+  const dataset = await mapDataset(query);
   if (!dataset.total) throw new EmptyMapExportError();
+  if (query.view === "offer") {
+    const all = [...dataset.located, ...dataset.unlocated];
+    const csv = createExcelCsv(
+      ["CUE_ANEXO", "CUI", "Unidad de dictado", "Institución responsable", "Gestión", "Tipo de sede", "Localidad", "Departamento", "Tipo de oferta", "Carreras vigentes", "Matrícula 2026", "Ingresantes 2026", "Egresados 2026", "Latitud", "Longitud"],
+      all.map((row) => [row.cue, row.cui, row.name, row.responsibleInstitution, row.management, row.siteType, row.locality, row.department, row.offerType, row.careers?.join(" | "), row.enrollment, row.entrants, row.graduates, "latitude" in row ? row.latitude : row.rawLatitude, "longitude" in row ? row.longitude : row.rawLongitude]),
+    );
+    return { body: Buffer.from(csv, "utf8"), contentType: "text/csv; charset=utf-8", filename: `sies_mapa_oferta_2026_${dateStamp()}.csv` };
+  }
   const rows = [
     ...dataset.located.map((row) => [row.cue, row.name, row.management, row.siteType, row.locality, row.department, row.baseTrainingType, row.address, row.latitude, row.longitude]),
     ...dataset.unlocated.map((row) => [row.cue, row.name, row.management, row.siteType, row.locality, row.department, row.baseTrainingType, row.address, row.rawLatitude, row.rawLongitude]),
@@ -32,18 +54,21 @@ export async function createMapCsvReport(query: InstitutionQuery): Promise<Gener
   };
 }
 
-export async function createMapPdfReport(query: InstitutionQuery): Promise<GeneratedReport> {
+export async function createMapPdfReport(query: MapQuery): Promise<GeneratedReport> {
   logPdfStage("mapa-institucional", "inicio");
-  const dataset = await getGeographicInstitutions(query);
+  const dataset = await mapDataset(query);
   if (!dataset.total) throw new EmptyMapExportError();
   const map = await createStaticInstitutionMap(dataset.located);
-  const rows = [...dataset.located, ...dataset.unlocated];
+  const rows = [...dataset.located, ...dataset.unlocated].map((row) => query.view === "offer" ? {
+    ...row, baseTrainingType: `${row.offerType ?? ""}${row.careers?.length ? ` · ${row.careers.join(" | ")}` : ""}`,
+  } : row);
   logPdfStage("mapa-institucional", "carga de datos", { records: rows.length });
   return {
     body: await createMapInstitutionsPdf(rows, {
-      filters: appliedFilters(query), total: dataset.total,
+      filters: mapFilters(query), total: dataset.total,
       located: dataset.located.length, unlocated: dataset.unlocated.length, map,
+      mode: query.view,
     }),
-    contentType: "application/pdf", filename: `sies_mapa_institucional_${dateStamp()}.pdf`,
+    contentType: "application/pdf", filename: `sies_mapa_${query.view === "offer" ? "oferta_2026" : "institucional"}_${dateStamp()}.pdf`,
   };
 }

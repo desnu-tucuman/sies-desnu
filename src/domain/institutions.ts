@@ -296,7 +296,7 @@ export function filterAndSortInstitutions(
     !expected?.length || expected.some((value) => normalizeForMatch(actual) === normalizeForMatch(value));
 
   const filtered = institutions.filter((institution) =>
-    (!normalizedSearch || normalizeForMatch(`${institution.name} ${institution.cue}`).includes(normalizedSearch)) &&
+    (!normalizedSearch || normalizeForMatch(`${institution.name} ${institution.cue} ${institution.cui}`).includes(normalizedSearch)) &&
     equalsAny(institution.id, query.institutionId) &&
     equals(institution.management, query.management) &&
     equals(institution.department, query.department) &&

@@ -266,6 +266,12 @@ tbody tr:hover { background: #f1f9fa; }
 .offerList li { margin-bottom: 10px; line-height: 1.45; }
 
 .mapPage { max-width: 1400px; }
+.mapViewSelector { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.mapViewSelector > span { margin-right: 4px; color: var(--blue); font-size: .82rem; font-weight: 800; }
+.mapViewSelector a { padding: 9px 15px; border: 1px solid var(--blue); color: var(--blue); background: white; font-size: .82rem; font-weight: 800; text-decoration: none; }
+.mapViewSelector a:first-of-type { border-radius: 8px 0 0 8px; }
+.mapViewSelector a:last-child { margin-left: -8px; border-radius: 0 8px 8px 0; }
+.mapViewSelector a[aria-current="page"] { color: white; background: var(--blue); }
 .mapFilters { grid-template-columns: 2fr repeat(2, 1fr); }
 .mapMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 26px 0 16px; }
 .referenceCaption { color: var(--blue); font-weight: 600; }
@@ -326,6 +332,13 @@ tbody tr:hover { background: #f1f9fa; }
 .mapPopup h3 { margin: 0 0 10px; color: var(--blue); font-size: 1rem; line-height: 1.25; }
 .mapPopup p { margin: 4px 0; color: var(--ink); font-size: .78rem; line-height: 1.35; }
 .mapPopup a { display: inline-block; margin-top: 10px; color: var(--blue); font-weight: 800; }
+.popupCareers { margin-top: 8px; color: var(--ink); font-size: .78rem; }
+.popupCareers ul { max-height: 150px; overflow-y: auto; margin: 5px 0 0; padding-left: 18px; }
+.popupCareers li { margin-bottom: 4px; }
+.popupCareers mark { padding: 1px 3px; color: var(--ink); background: #ffe4a8; border-radius: 3px; }
+.popupMetrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 9px; }
+.popupMetrics span { padding: 6px; color: var(--muted); background: #f2f6f7; font-size: .66rem; text-align: center; }
+.popupMetrics strong { display: block; margin-top: 2px; color: var(--blue); font-size: .82rem; }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { color: white; background: var(--muted); font-family: "Roboto", Arial, sans-serif; font-weight: 700; }
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgb(92 111 121 / 35%); }
 .unlocatedPanel { margin-top: 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: white; }

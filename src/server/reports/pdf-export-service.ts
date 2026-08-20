@@ -89,14 +89,14 @@ const LIST_COLUMNS = [
   { key: "baseTrainingType", label: "Formación institucional", width: 170 },
 ] as const;
 
-function listTableHeader(doc: PDFKit.PDFDocument, y: number): number {
+function listTableHeader(doc: PDFKit.PDFDocument, y: number, lastColumnLabel?: string): number {
   let x = doc.page.margins.left;
   doc.font(PDF_FONT_BOLD).fontSize(7).fillColor("#FFFFFF");
-  for (const column of LIST_COLUMNS) {
+  LIST_COLUMNS.forEach((column, index) => {
     doc.rect(x, y, column.width, 23).fill(DARK_BLUE);
-    doc.fillColor("#FFFFFF").text(column.label, x + 4, y + 6, { width: column.width - 8, height: 15 });
+    doc.fillColor("#FFFFFF").text(index === LIST_COLUMNS.length - 1 && lastColumnLabel ? lastColumnLabel : column.label, x + 4, y + 6, { width: column.width - 8, height: 15 });
     x += column.width;
-  }
+  });
   return y + 23;
 }
 
@@ -140,7 +140,7 @@ export function createInstitutionsPdf(rows: InstitutionDirectoryItem[], metadata
 
 export function createMapInstitutionsPdf(
   rows: InstitutionDirectoryItem[],
-  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap },
+  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap; mode?: "institutions" | "offer" },
 ): Promise<Buffer> {
   return collectPdf("mapa-institucional", (doc) => {
     const drawMap = (y: number) => {
@@ -167,16 +167,16 @@ export function createMapInstitutionsPdf(
     };
     const pageHeader = (first: boolean) => {
       let y = brandHeader(doc, !first);
-      doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text("SIES · Mapa institucional", doc.page.margins.left, y);
+      doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text(metadata.mode === "offer" ? "SIES · Mapa de oferta 2026" : "SIES · Mapa institucional", doc.page.margins.left, y);
       y += first ? 27 : 20;
       if (first) {
         doc.font(PDF_FONT_REGULAR).fillColor(MUTED).fontSize(8)
-          .text(`Fecha de generación: ${reportDate()}   |   Instituciones: ${metadata.total}   |   Ubicadas: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
+          .text(`Fecha de generación: ${reportDate()}   |   ${metadata.mode === "offer" ? "Unidades de dictado" : "Instituciones"}: ${metadata.total}   |   ${metadata.mode === "offer" ? "Unidades ubicadas" : "Ubicadas"}: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
           .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
         y += 35;
         y = drawMap(y);
       }
-      return listTableHeader(doc, y);
+      return listTableHeader(doc, y, metadata.mode === "offer" ? "Tipo de oferta / carreras" : undefined);
     };
     let y = pageHeader(true);
     rows.forEach((row, index) => {

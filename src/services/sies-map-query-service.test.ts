@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { buildSiesMapUrl } from "./sies-map-query-service";
 
 describe("acciones del mapa de SIES Responde", () => {
-  it("no usa títulos de carrera ni términos residuales como búsqueda institucional", () => {
+  it("abre las consultas académicas en Oferta 2026 y usa el título como búsqueda", () => {
     expect(buildSiesMapUrl({
       intent: "ofertas", searchTerms: ["INGLES"], careerType: "PROFESORADO",
       careerTitle: "INGLES", managementType: "ESTATAL",
-    }, ["unit-a", "unit-b"])).toBe("/mapa?institutionId=unit-a&institutionId=unit-b&management=ESTATAL");
+    }, ["unit-a", "unit-b"])).toBe("/mapa?vista=oferta&search=INGLES&institutionId=unit-a&institutionId=unit-b&management=ESTATAL");
   });
 
   it("separa departamento y múltiples tipos de formación sin construir search", () => {

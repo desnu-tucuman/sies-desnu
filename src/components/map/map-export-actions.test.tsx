@@ -17,4 +17,9 @@ describe("acciones de exportación del mapa", () => {
     expect(html).toContain("No hay registros para exportar con los filtros seleccionados.");
     expect(html).not.toContain("href=");
   });
+
+  it("identifica de forma accesible las descargas de Oferta 2026", () => {
+    const html = renderToStaticMarkup(<MapExportActions total={10} exportSuffix="?vista=oferta" mode="offer" />);
+    expect(html).toContain('aria-label="Descargas del mapa de oferta 2026"');
+  });
 });
