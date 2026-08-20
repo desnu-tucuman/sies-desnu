@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SourceError } from "@/components/ui";
 import { SiesRespondsHomeEntry } from "@/components/sies-responds/home-entry";
+import { appLastUpdated } from "@/domain/app-metadata";
 import { getInstitutionDataset } from "@/server/services/institutions-service";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export default async function HomePage() {
             <h1>SIES</h1>
             <p className="heroTitle">Sistema de Información de Educación Superior No Universitaria</p>
             <p className="heroCopy">Una herramienta interna para consultar información institucional y académica de forma clara, directa y actualizada.</p>
-            <div className="heroMeta"><span>Año de referencia <strong>{dataset.referenceYear || "No hay datos"}</strong></span><span>Última actualización <strong>{dataset.lastUpdated}</strong></span></div>
+            <div className="heroMeta"><span>Año de referencia <strong>{dataset.referenceYear || "No hay datos"}</strong></span><span>Última actualización <strong>{appLastUpdated()}</strong></span></div>
           </div>
         </section>
         <SiesRespondsHomeEntry />
