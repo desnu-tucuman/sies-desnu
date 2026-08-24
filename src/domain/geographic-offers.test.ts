@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGeographicOfferRows, filterGeographicOffers, mapQueryFromParams, offerTypeCategory } from "./geographic-offers";
+import { careersForGeographicOffer, createGeographicOfferRows, filterGeographicOffers, mapQueryFromParams, offerTypeCategory, sortGeographicOffersTerritorially } from "./geographic-offers";
 
 const row = (overrides: Record<string, string> = {}) => ({
   cue_anexo: "900034000", cui: "900034000", nombre_establecimiento: "IES AGUILARES", nombre_sede_oferta: "EXT. ÁULICA SANTA ANA - IES AGUILARES",
@@ -21,6 +21,21 @@ describe("mapa de oferta 2026", () => {
     const rows = createGeographicOfferRows([row()], "desarrollo de software");
     const filtered = filterGeographicOffers(rows, { search: "DESARROLLO de software" });
     expect(filtered).toHaveLength(1); expect(filtered[0].matchedCareers).toEqual(["TECNICATURA SUPERIOR EN DESARROLLO DE SOFTWARE"]);
+  });
+
+  it("expone sólo carreras coincidentes cuando existe búsqueda y todas cuando no existe", () => {
+    const offer = createGeographicOfferRows([row()], "ingles")[0];
+    expect(careersForGeographicOffer(offer, "INGLÉS")).toEqual(["PROFESORADO DE INGLÉS"]);
+    expect(careersForGeographicOffer(offer)).toHaveLength(2);
+  });
+
+  it("ordena territorialmente por departamento, localidad y unidad", () => {
+    const offers = createGeographicOfferRows([
+      row({ cue_anexo: "2", nombre_sede_oferta: "Unidad Z", departamento_oferta: "RÍO CHICO", localidad_oferta: "SANTA ANA" }),
+      row({ cue_anexo: "1", nombre_sede_oferta: "Unidad B", departamento_oferta: "CAPITAL", localidad_oferta: "SAN MIGUEL" }),
+      row({ cue_anexo: "3", nombre_sede_oferta: "Unidad A", departamento_oferta: "CAPITAL", localidad_oferta: "SAN MIGUEL" }),
+    ], "");
+    expect(sortGeographicOffersTerritorially(offers).map((offer) => offer.name)).toEqual(["Unidad A", "Unidad B", "Unidad Z"]);
   });
 
   it("busca también por institución, CUE, CUI y territorio", () => {

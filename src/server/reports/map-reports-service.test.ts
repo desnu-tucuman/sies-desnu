@@ -63,16 +63,45 @@ describe("reportes filtrados del mapa", () => {
       total: 1, located: 1, unlocated: 0,
       map: expect.objectContaining({ attribution: "OpenStreetMap" }),
     }));
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: false });
   });
 
   it("exporta la vista de oferta con el dataset y columnas académicas filtradas", async () => {
     getGeographicOffers.mockResolvedValue(dataset([{
       ...institution("oferta", "2", "Extensión Santa Ana"), mapMode: "offer", responsibleInstitution: "IES Aguilares", offerType: "Mixta",
-      careers: ["Desarrollo de Software"], enrollment: "100", entrants: "25", graduates: "5",
+      careers: ["Desarrollo de Software", "Profesorado de Inglés"], matchedCareers: ["Desarrollo de Software"], enrollment: "100", entrants: "25", graduates: "5",
     }]));
     const report = await createMapCsvReport({ view: "offer", search: "software" });
     const text = report.body.toString("utf8");
     expect(getGeographicOffers).toHaveBeenCalledWith({ view: "offer", search: "software" });
-    expect(text).toContain("Institución responsable"); expect(text).toContain("Desarrollo de Software"); expect(text).toContain("Matrícula 2026");
+    expect(text).toContain("Institución responsable"); expect(text).toContain("Oferta coincidente"); expect(text).toContain("Desarrollo de Software"); expect(text).not.toContain("Profesorado de Inglés"); expect(text).toContain("Matrícula 2026");
+  });
+
+  it("conserva todas las carreras en CSV cuando no existe búsqueda textual", async () => {
+    getGeographicOffers.mockResolvedValue(dataset([{
+      ...institution("oferta", "2", "Extensión Santa Ana"), mapMode: "offer", responsibleInstitution: "IES Aguilares", offerType: "Mixta",
+      careers: ["Desarrollo de Software", "Profesorado de Inglés"], matchedCareers: [], enrollment: "100", entrants: "25", graduates: "5",
+    }]));
+    const text = (await createMapCsvReport({ view: "offer", management: "ESTATAL" })).body.toString("utf8");
+    expect(text).toContain("Carreras vigentes"); expect(text).toContain("Desarrollo de Software"); expect(text).toContain("Profesorado de Inglés");
+  });
+
+  it("desactiva clustering, ordena territorialmente y limita la oferta coincidente en el PDF", async () => {
+    getGeographicOffers.mockResolvedValue(dataset([
+      { ...institution("sur", "3", "Unidad Sur"), mapMode: "offer", responsibleInstitution: "IES Sur", offerType: "Docente", department: "RÍO CHICO", locality: "SANTA ANA", careers: ["Profesorado de Matemática", "Profesorado de Inglés"], matchedCareers: ["Profesorado de Matemática"] },
+      { ...institution("capital", "2", "Unidad Capital"), mapMode: "offer", responsibleInstitution: "IES Capital", offerType: "Docente", department: "CAPITAL", locality: "SAN MIGUEL", careers: ["Profesorado de Matemática"], matchedCareers: ["Profesorado de Matemática"] },
+    ]));
+    await createMapPdfReport({ view: "offer", search: "matematica" });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: false });
+    const [rows, metadata] = createMapInstitutionsPdf.mock.calls.at(-1) as unknown as [LocatedInstitution[], { mode: string; offerColumnLabel: string; total: number }];
+    expect(rows.map((row: LocatedInstitution) => row.name)).toEqual(["Unidad Capital", "Unidad Sur"]);
+    expect(rows[1].baseTrainingType).toContain("Profesorado de Matemática"); expect(rows[1].baseTrainingType).not.toContain("Profesorado de Inglés");
+    expect(metadata).toMatchObject({ mode: "offer", offerColumnLabel: "Oferta coincidente", total: 2 });
+  });
+
+  it("mantiene clustering en PDF cuando el conjunto filtrado supera 25 unidades", async () => {
+    getGeographicInstitutions.mockResolvedValue(dataset(Array.from({ length: 26 }, (_, index) => institution(String(index), String(index), `Institución ${index}`))));
+    await createMapPdfReport({ view: "institutions" });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: true });
   });
 });

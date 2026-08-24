@@ -63,3 +63,19 @@ export function clusterMapPoints<T extends GeographicPoint>(points: ProjectedMap
   }
   return clusters;
 }
+
+export function separateMapPoints<T extends GeographicPoint>(points: ProjectedMapPoint<T>[], minimumDistance = 18): MapPointCluster<T>[] {
+  const placed: MapPointCluster<T>[] = [];
+  for (const point of points) {
+    let x = point.x; let y = point.y;
+    const collides = (candidateX: number, candidateY: number) => placed.some((item) => Math.hypot(item.x - candidateX, item.y - candidateY) < minimumDistance);
+    for (let attempt = 0; collides(x, y) && attempt < 80; attempt += 1) {
+      const ring = Math.floor(attempt / 8) + 1;
+      const angle = (attempt % 8) * Math.PI / 4;
+      x = point.x + Math.cos(angle) * minimumDistance * ring;
+      y = point.y + Math.sin(angle) * minimumDistance * ring;
+    }
+    placed.push({ x, y, items: [point.item] });
+  }
+  return placed;
+}

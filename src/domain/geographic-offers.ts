@@ -114,6 +114,17 @@ export function filterGeographicOffers(rows: GeographicOfferItem[], query: Geogr
   }).sort((a, b) => compareText(a.name, b.name));
 }
 
+export function careersForGeographicOffer(
+  offer: Pick<GeographicOfferItem, "careers" | "matchedCareers">,
+  search?: string,
+): string[] {
+  return normalizeForMatch(search) ? offer.matchedCareers : offer.careers;
+}
+
+export function sortGeographicOffersTerritorially<T extends Pick<GeographicOfferItem, "department" | "locality" | "name">>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => compareText(a.department, b.department) || compareText(a.locality, b.locality) || compareText(a.name, b.name));
+}
+
 function distinct(rows: GeographicOfferItem[], field: keyof GeographicOfferItem): string[] {
   const values = new Map<string, string>();
   for (const row of rows) { const value = safeText(row[field]); const key = normalizeForMatch(value); if (value && !values.has(key)) values.set(key, value); }

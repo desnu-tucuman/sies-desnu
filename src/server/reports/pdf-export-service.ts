@@ -82,19 +82,27 @@ function addPageFooters(doc: PDFKit.PDFDocument): void {
   }
 }
 
-const LIST_COLUMNS = [
+type ListColumn = { key: keyof InstitutionDirectoryItem; label: string; width: number };
+
+const LIST_COLUMNS: ListColumn[] = [
   { key: "name", label: "Institución o sede", width: 205 }, { key: "cue", label: "CUE", width: 67 },
   { key: "management", label: "Gestión", width: 58 }, { key: "locality", label: "Localidad", width: 100 },
   { key: "department", label: "Departamento", width: 85 }, { key: "siteType", label: "Tipo de sede", width: 88 },
   { key: "baseTrainingType", label: "Formación institucional", width: 170 },
 ] as const;
 
-function listTableHeader(doc: PDFKit.PDFDocument, y: number, lastColumnLabel?: string): number {
+const MAP_OFFER_COLUMNS: ListColumn[] = [
+  { key: "name", label: "Unidad de dictado", width: 230 }, { key: "cue", label: "CUE", width: 67 },
+  { key: "management", label: "Gestión", width: 58 }, { key: "locality", label: "Localidad", width: 105 },
+  { key: "siteType", label: "Tipo de sede", width: 88 }, { key: "baseTrainingType", label: "Tipo de oferta / carreras", width: 225 },
+] as const;
+
+function listTableHeader(doc: PDFKit.PDFDocument, y: number, columns: ListColumn[] = LIST_COLUMNS, lastColumnLabel?: string): number {
   let x = doc.page.margins.left;
   doc.font(PDF_FONT_BOLD).fontSize(7).fillColor("#FFFFFF");
-  LIST_COLUMNS.forEach((column, index) => {
+  columns.forEach((column, index) => {
     doc.rect(x, y, column.width, 23).fill(DARK_BLUE);
-    doc.fillColor("#FFFFFF").text(index === LIST_COLUMNS.length - 1 && lastColumnLabel ? lastColumnLabel : column.label, x + 4, y + 6, { width: column.width - 8, height: 15 });
+    doc.fillColor("#FFFFFF").text(index === columns.length - 1 && lastColumnLabel ? lastColumnLabel : column.label, x + 4, y + 6, { width: column.width - 8, height: 15 });
     x += column.width;
   });
   return y + 23;
@@ -140,9 +148,10 @@ export function createInstitutionsPdf(rows: InstitutionDirectoryItem[], metadata
 
 export function createMapInstitutionsPdf(
   rows: InstitutionDirectoryItem[],
-  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap; mode?: "institutions" | "offer" },
+  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap; mode?: "institutions" | "offer"; offerColumnLabel?: string },
 ): Promise<Buffer> {
   return collectPdf("mapa-institucional", (doc) => {
+    const columns = metadata.mode === "offer" ? MAP_OFFER_COLUMNS : LIST_COLUMNS;
     const drawMap = (y: number) => {
       const { map } = metadata;
       const x = doc.page.margins.left;
@@ -158,6 +167,16 @@ export function createMapInstitutionsPdf(
           const color = MANAGEMENT_MARKER_COLORS[managementMarkerKind(cluster.items[0].management)];
           doc.circle(markerX, markerY, 7).fillAndStroke(color, "#FFFFFF").lineWidth(2);
         }
+      }
+      if (metadata.mode === "offer") {
+        const legendX = x + 9; const legendY = y + 9;
+        doc.roundedRect(legendX, legendY, 126, 25, 4).fillOpacity(.92).fill("#FFFFFF").fillOpacity(1);
+        const legendItem = (itemX: number, color: string, label: string) => {
+          doc.circle(itemX, legendY + 12.5, 5).fillAndStroke(color, "#FFFFFF").lineWidth(1.5);
+          doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(7).text(label, itemX + 8, legendY + 9, { width: 48 });
+        };
+        legendItem(legendX + 10, MANAGEMENT_MARKER_COLORS.state, "Estatal");
+        legendItem(legendX + 70, MANAGEMENT_MARKER_COLORS.private, "Privado");
       }
       doc.restore();
       const attributionWidth = 180;
@@ -177,26 +196,57 @@ export function createMapInstitutionsPdf(
         y += 35;
         y = drawMap(y);
       }
-      return listTableHeader(doc, y, metadata.mode === "offer" ? "Tipo de oferta / carreras" : undefined);
+      return listTableHeader(doc, y, columns, metadata.mode === "offer" ? metadata.offerColumnLabel : undefined);
     };
     let y = pageHeader(true);
-    rows.forEach((row, index) => {
+    const rowHeight = (row: InstitutionDirectoryItem) => {
       doc.font(PDF_FONT_REGULAR).fontSize(7.2);
-      const values = LIST_COLUMNS.map((column) => row[column.key] || NO_DATA);
-      const heights = values.map((value, columnIndex) => doc.heightOfString(value, { width: LIST_COLUMNS[columnIndex].width - 8 }));
-      const height = Math.max(21, Math.max(...heights) + 9);
-      if (y + height > doc.page.height - 48) {
-        doc.addPage({ size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
-        y = pageHeader(false);
-      }
+      const values = columns.map((column) => row[column.key] || NO_DATA);
+      return Math.max(21, Math.max(...values.map((value, columnIndex) => doc.heightOfString(value, { width: columns[columnIndex].width - 8 }))) + 9);
+    };
+    const addTablePage = () => {
+      doc.addPage({ size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
+      y = pageHeader(false);
+    };
+    const drawRow = (row: InstitutionDirectoryItem, index: number, height: number) => {
+      doc.font(PDF_FONT_REGULAR).fontSize(7.2);
+      const values = columns.map((column) => row[column.key] || NO_DATA);
       let x = doc.page.margins.left;
-      LIST_COLUMNS.forEach((column, columnIndex) => {
+      columns.forEach((column, columnIndex) => {
         doc.rect(x, y, column.width, height).fill(index % 2 ? "#FFFFFF" : LIGHT).strokeColor(LINE).lineWidth(.35).stroke();
         doc.fillColor("#18313F").text(values[columnIndex], x + 4, y + 5, { width: column.width - 8, height: height - 8, ellipsis: true });
         x += column.width;
       });
       y += height;
-    });
+    };
+    const drawDepartmentHeader = (department: string, count: number) => {
+      const label = `${(department || NO_DATA).toUpperCase()} · ${count} ${count === 1 ? "unidad de dictado" : "unidades de dictado"}`;
+      doc.rect(doc.page.margins.left, y, 773, 22).fill(TURQUOISE);
+      doc.font(PDF_FONT_BOLD).fillColor("#FFFFFF").fontSize(8.2).text(label, doc.page.margins.left + 7, y + 6, { width: 759, height: 13 });
+      y += 22;
+    };
+
+    if (metadata.mode === "offer") {
+      const groups = new Map<string, InstitutionDirectoryItem[]>();
+      for (const row of rows) groups.set(row.department || NO_DATA, [...(groups.get(row.department || NO_DATA) ?? []), row]);
+      let rowIndex = 0;
+      for (const [department, groupRows] of groups) {
+        const firstHeight = rowHeight(groupRows[0]);
+        if (y + 22 + firstHeight > doc.page.height - 48) addTablePage();
+        drawDepartmentHeader(department, groupRows.length);
+        for (const row of groupRows) {
+          const height = rowHeight(row);
+          if (y + height > doc.page.height - 48) { addTablePage(); drawDepartmentHeader(department, groupRows.length); }
+          drawRow(row, rowIndex, height); rowIndex += 1;
+        }
+      }
+    } else {
+      rows.forEach((row, index) => {
+        const height = rowHeight(row);
+        if (y + height > doc.page.height - 48) addTablePage();
+        drawRow(row, index, height);
+      });
+    }
   }, { size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
 }
 
