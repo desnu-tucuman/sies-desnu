@@ -7,7 +7,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import { TUCUMAN_CENTER, type LocatedInstitution } from "@/domain/geography";
 import { MAP_CLUSTER_LAYER_OPTIONS, mapClusterLayerKey } from "@/domain/map-cluster-layers";
 import { MANAGEMENT_MARKER_COLORS, clusterMarkerColor, managementMarkerKind } from "@/domain/map-marker-style";
-import { getMapViewportStrategy } from "@/domain/map-viewport";
+import { getBoundsForGeographicResults, getMapViewportStrategy } from "@/domain/map-viewport";
 import { MapPopupContent } from "./map-popup-content";
 
 const iconCache = new Map<string, L.DivIcon>();
@@ -57,8 +57,14 @@ function FitFilteredBounds({ institutions, singleMarker }: { institutions: Locat
       return () => window.clearTimeout(timer);
     }
 
-    const bounds = L.latLngBounds(institutions.map((institution) => [institution.latitude, institution.longitude]));
+    const geographicBounds = getBoundsForGeographicResults(institutions);
+    if (!geographicBounds) return;
+    const bounds = L.latLngBounds(
+      [geographicBounds.south, geographicBounds.west],
+      [geographicBounds.north, geographicBounds.east],
+    );
     map.fitBounds(bounds, { padding: strategy.padding, maxZoom: strategy.maxZoom, animate: false });
+    if (map.getZoom() < strategy.minZoom) map.setZoom(strategy.minZoom, { animate: false });
   }, [institutions, map, singleMarker]);
   return null;
 }

@@ -59,7 +59,11 @@ export async function createMapPdfReport(query: MapQuery): Promise<GeneratedRepo
   logPdfStage("mapa-institucional", "inicio");
   const dataset = await mapDataset(query);
   if (!dataset.total) throw new EmptyMapExportError();
-  const map = await createStaticInstitutionMap(dataset.located, { cluster: dataset.total > 25 });
+  const map = await createStaticInstitutionMap(dataset.located, {
+    width: 480,
+    height: 480,
+    cluster: dataset.total > 25,
+  });
   const sourceRows = query.view === "offer"
     ? sortGeographicOffersTerritorially([...dataset.located, ...dataset.unlocated])
     : [...dataset.located, ...dataset.unlocated];

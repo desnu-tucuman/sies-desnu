@@ -1,5 +1,5 @@
 import { TUCUMAN_CENTER } from "./geography";
-import { getMapViewportStrategy } from "./map-viewport";
+import { getBoundsForGeographicResults, getMapViewportStrategy } from "./map-viewport";
 
 export interface GeographicPoint { latitude: number; longitude: number }
 export interface StaticMapViewport { centerLatitude: number; centerLongitude: number; zoom: number; width: number; height: number }
@@ -19,25 +19,21 @@ export function worldPixel(point: GeographicPoint, zoom: number): { x: number; y
   };
 }
 
-function geographicCenter(points: GeographicPoint[]): GeographicPoint {
-  if (!points.length) return { latitude: TUCUMAN_CENTER[0], longitude: TUCUMAN_CENTER[1] };
-  return {
-    latitude: (Math.min(...points.map((point) => point.latitude)) + Math.max(...points.map((point) => point.latitude))) / 2,
-    longitude: (Math.min(...points.map((point) => point.longitude)) + Math.max(...points.map((point) => point.longitude))) / 2,
-  };
-}
-
 export function calculateStaticMapViewport(points: GeographicPoint[], width = 773, height = 250): StaticMapViewport {
   const strategy = getMapViewportStrategy(points.length);
-  const center = geographicCenter(points);
+  const bounds = getBoundsForGeographicResults(points);
+  const center = bounds
+    ? { latitude: bounds.centerLatitude, longitude: bounds.centerLongitude }
+    : { latitude: TUCUMAN_CENTER[0], longitude: TUCUMAN_CENTER[1] };
   if (strategy.kind !== "bounds") return { centerLatitude: center.latitude, centerLongitude: center.longitude, zoom: strategy.zoom, width, height };
   const availableWidth = Math.max(1, width - strategy.padding[0] * 2);
   const availableHeight = Math.max(1, height - strategy.padding[1] * 2);
   let zoom = strategy.maxZoom;
-  for (; zoom > 1; zoom -= 1) {
-    const projected = points.map((point) => worldPixel(point, zoom));
-    const spanX = Math.max(...projected.map((point) => point.x)) - Math.min(...projected.map((point) => point.x));
-    const spanY = Math.max(...projected.map((point) => point.y)) - Math.min(...projected.map((point) => point.y));
+  for (; zoom > strategy.minZoom; zoom -= 1) {
+    const northWest = worldPixel({ latitude: bounds!.north, longitude: bounds!.west }, zoom);
+    const southEast = worldPixel({ latitude: bounds!.south, longitude: bounds!.east }, zoom);
+    const spanX = Math.abs(southEast.x - northWest.x);
+    const spanY = Math.abs(southEast.y - northWest.y);
     if (spanX <= availableWidth && spanY <= availableHeight) break;
   }
   return { centerLatitude: center.latitude, centerLongitude: center.longitude, zoom, width, height };

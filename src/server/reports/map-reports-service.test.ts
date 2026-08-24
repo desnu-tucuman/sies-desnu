@@ -63,7 +63,7 @@ describe("reportes filtrados del mapa", () => {
       total: 1, located: 1, unlocated: 0,
       map: expect.objectContaining({ attribution: "OpenStreetMap" }),
     }));
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: false });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: false });
   });
 
   it("exporta la vista de oferta con el dataset y columnas académicas filtradas", async () => {
@@ -92,7 +92,7 @@ describe("reportes filtrados del mapa", () => {
       { ...institution("capital", "2", "Unidad Capital"), mapMode: "offer", responsibleInstitution: "IES Capital", offerType: "Docente", department: "CAPITAL", locality: "SAN MIGUEL", careers: ["Profesorado de Matemática"], matchedCareers: ["Profesorado de Matemática"] },
     ]));
     await createMapPdfReport({ view: "offer", search: "matematica" });
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: false });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: false });
     const [rows, metadata] = createMapInstitutionsPdf.mock.calls.at(-1) as unknown as [LocatedInstitution[], { mode: string; offerColumnLabel: string; total: number }];
     expect(rows.map((row: LocatedInstitution) => row.name)).toEqual(["Unidad Capital", "Unidad Sur"]);
     expect(rows[1].baseTrainingType).toContain("Profesorado de Matemática"); expect(rows[1].baseTrainingType).not.toContain("Profesorado de Inglés");
@@ -102,6 +102,6 @@ describe("reportes filtrados del mapa", () => {
   it("mantiene clustering en PDF cuando el conjunto filtrado supera 25 unidades", async () => {
     getGeographicInstitutions.mockResolvedValue(dataset(Array.from({ length: 26 }, (_, index) => institution(String(index), String(index), `Institución ${index}`))));
     await createMapPdfReport({ view: "institutions" });
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { cluster: true });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: true });
   });
 });

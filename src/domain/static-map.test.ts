@@ -21,7 +21,7 @@ describe("mapa estático para PDF", () => {
     ];
     const viewport = calculateStaticMapViewport(points);
     const projected = projectMapPoints(points, viewport);
-    expect(projected.every((point) => point.x >= 47 && point.x <= viewport.width - 47 && point.y >= 47 && point.y <= viewport.height - 47)).toBe(true);
+    expect(projected.every((point) => point.x >= 29 && point.x <= viewport.width - 29 && point.y >= 29 && point.y <= viewport.height - 29)).toBe(true);
     expect(clusterMapPoints(projected, 48).map((cluster) => cluster.items.length)).toEqual([2, 1]);
   });
 
@@ -36,5 +36,25 @@ describe("mapa estático para PDF", () => {
     expect(separated.every((point) => point.items.length === 1)).toBe(true);
     expect(Math.hypot(separated[0].x - separated[1].x, separated[0].y - separated[1].y)).toBeGreaterThanOrEqual(18);
     expect(Math.hypot(separated[1].x - separated[2].x, separated[1].y - separated[2].y)).toBeGreaterThanOrEqual(18);
+  });
+
+  it("encuadra Matemática en zoom 9 con el lienzo geográfico del PDF", () => {
+    const points = [
+      { latitude: -26.81420364, longitude: -65.22538889 },
+      { latitude: -27.4335133, longitude: -65.62345728 },
+      { latitude: -27.030612, longitude: -65.305464 },
+      { latitude: -27.165889, longitude: -65.49805 },
+      { latitude: -27.771459, longitude: -65.586548 },
+      { latitude: -26.827401, longitude: -65.205075 },
+      { latitude: -26.818344, longitude: -65.216688 },
+      { latitude: -26.84374717, longitude: -65.21559429 },
+      { latitude: -27.34826562, longitude: -65.59316283 },
+    ];
+    const viewport = calculateStaticMapViewport(points, 480, 480);
+    const projected = projectMapPoints(points, viewport);
+    expect(viewport.zoom).toBe(9);
+    expect(viewport.centerLatitude).toBeCloseTo(-27.29283132, 8);
+    expect(viewport.centerLongitude).toBeCloseTo(-65.41426614, 8);
+    expect(projected.every((point) => point.x >= 30 && point.x <= 450 && point.y >= 30 && point.y <= 450)).toBe(true);
   });
 });

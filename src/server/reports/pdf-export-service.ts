@@ -154,11 +154,15 @@ export function createMapInstitutionsPdf(
     const columns = metadata.mode === "offer" ? MAP_OFFER_COLUMNS : LIST_COLUMNS;
     const drawMap = (y: number) => {
       const { map } = metadata;
-      const x = doc.page.margins.left;
-      doc.save().rect(x, y, map.viewport.width, map.viewport.height).clip();
-      for (const tile of map.tiles) doc.image(tile.body, x + tile.x, y + tile.y, { width: tile.width, height: tile.height });
+      const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const scale = Math.min(availableWidth / map.viewport.width, 360 / map.viewport.height, 1);
+      const displayWidth = map.viewport.width * scale;
+      const displayHeight = map.viewport.height * scale;
+      const x = doc.page.margins.left + (availableWidth - displayWidth) / 2;
+      doc.save().rect(x, y, displayWidth, displayHeight).clip();
+      for (const tile of map.tiles) doc.image(tile.body, x + tile.x * scale, y + tile.y * scale, { width: tile.width * scale, height: tile.height * scale });
       for (const cluster of map.clusters) {
-        const markerX = x + cluster.x; const markerY = y + cluster.y;
+        const markerX = x + cluster.x * scale; const markerY = y + cluster.y * scale;
         if (cluster.items.length > 1) {
           const color = clusterMarkerColor(cluster.items.map((item) => item.management));
           doc.circle(markerX, markerY, 14).fillAndStroke(color, "#FFFFFF").lineWidth(3);
@@ -180,12 +184,12 @@ export function createMapInstitutionsPdf(
       }
       doc.restore();
       const attributionWidth = 180;
-      doc.rect(x + map.viewport.width - attributionWidth, y + map.viewport.height - 15, attributionWidth, 15).fillOpacity(.88).fill("#FFFFFF").fillOpacity(1);
-      doc.font(PDF_FONT_REGULAR).fillColor("#364A54").fontSize(6.3).text(map.attribution, x + map.viewport.width - attributionWidth + 5, y + map.viewport.height - 11, { width: attributionWidth - 10, align: "right" });
-      doc.rect(x, y, map.viewport.width, map.viewport.height).lineWidth(.6).strokeColor(LINE).stroke();
-      return y + map.viewport.height + 12;
+      doc.rect(x + displayWidth - attributionWidth, y + displayHeight - 15, attributionWidth, 15).fillOpacity(.88).fill("#FFFFFF").fillOpacity(1);
+      doc.font(PDF_FONT_REGULAR).fillColor("#364A54").fontSize(6.3).text(map.attribution, x + displayWidth - attributionWidth + 5, y + displayHeight - 11, { width: attributionWidth - 10, align: "right" });
+      doc.rect(x, y, displayWidth, displayHeight).lineWidth(.6).strokeColor(LINE).stroke();
+      return y + displayHeight + 12;
     };
-    const pageHeader = (first: boolean) => {
+    function pageHeader(first: boolean): number {
       let y = brandHeader(doc, !first);
       doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text(metadata.mode === "offer" ? "SIES · Mapa de oferta 2026" : "SIES · Mapa institucional", doc.page.margins.left, y);
       y += first ? 27 : 20;
@@ -195,9 +199,13 @@ export function createMapInstitutionsPdf(
           .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
         y += 35;
         y = drawMap(y);
+        if (y + 66 > doc.page.height - 48) {
+          doc.addPage({ size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });
+          return pageHeader(false);
+        }
       }
       return listTableHeader(doc, y, columns, metadata.mode === "offer" ? metadata.offerColumnLabel : undefined);
-    };
+    }
     let y = pageHeader(true);
     const rowHeight = (row: InstitutionDirectoryItem) => {
       doc.font(PDF_FONT_REGULAR).fontSize(7.2);
