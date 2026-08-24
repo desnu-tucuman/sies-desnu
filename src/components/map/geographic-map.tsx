@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { TUCUMAN_CENTER, type LocatedInstitution } from "@/domain/geography";
+import { MAP_CLUSTER_LAYER_OPTIONS, mapClusterLayerKey } from "@/domain/map-cluster-layers";
 import { MANAGEMENT_MARKER_COLORS, clusterMarkerColor, managementMarkerKind } from "@/domain/map-marker-style";
 import { getMapViewportStrategy } from "@/domain/map-viewport";
 import { MapPopupContent } from "./map-popup-content";
@@ -87,6 +88,7 @@ function InstitutionMarker({ institution, markerRef }: { institution: LocatedIns
 
 export default function GeographicMap({ institutions }: { institutions: LocatedInstitution[] }) {
   const singleMarker = useRef<L.Marker | null>(null);
+  const clusterLayerKey = useMemo(() => mapClusterLayerKey(institutions), [institutions]);
 
   return (
     <MapContainer center={TUCUMAN_CENTER} zoom={8} className="institutionMap" scrollWheelZoom>
@@ -95,7 +97,12 @@ export default function GeographicMap({ institutions }: { institutions: LocatedI
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitFilteredBounds institutions={institutions} singleMarker={singleMarker} />
-      <MarkerClusterGroup chunkedLoading iconCreateFunction={clusterIcon} maxClusterRadius={48} showCoverageOnHover={false} zoomToBoundsOnClick spiderfyOnMaxZoom>
+      <MarkerClusterGroup
+        key={clusterLayerKey}
+        chunkedLoading
+        iconCreateFunction={clusterIcon}
+        {...MAP_CLUSTER_LAYER_OPTIONS}
+      >
         {institutions.map((institution) => (
           <InstitutionMarker
             key={institution.id}
