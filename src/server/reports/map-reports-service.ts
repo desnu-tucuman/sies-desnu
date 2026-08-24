@@ -1,6 +1,8 @@
 import "server-only";
 
-import { careersForGeographicOffer, sortGeographicOffersTerritorially, type MapQuery } from "../../domain/geographic-offers";
+import { careersForGeographicOffer, offerTypeForCareers, sortGeographicOffersTerritorially, type MapQuery } from "../../domain/geographic-offers";
+import { normalizeForMatch } from "../../domain/institutions";
+import { managementMarkerKind } from "../../domain/map-marker-style";
 import { getGeographicInstitutions } from "@/server/services/geographic-institutions-service";
 import { getGeographicOffers } from "@/server/services/geographic-offers-service";
 import { createStaticInstitutionMap } from "@/server/services/static-map-service";
@@ -60,7 +62,7 @@ export async function createMapPdfReport(query: MapQuery): Promise<GeneratedRepo
   const dataset = await mapDataset(query);
   if (!dataset.total) throw new EmptyMapExportError();
   const map = await createStaticInstitutionMap(dataset.located, {
-    width: 480,
+    width: 800,
     height: 480,
     cluster: dataset.total > 25,
   });
@@ -70,8 +72,11 @@ export async function createMapPdfReport(query: MapQuery): Promise<GeneratedRepo
   const rows = sourceRows.map((row) => {
     if (query.view !== "offer") return row;
     const careers = careersForGeographicOffer({ careers: row.careers ?? [], matchedCareers: row.matchedCareers ?? [] }, query.search);
-    return { ...row, baseTrainingType: `${row.offerType ?? ""}${careers.length ? ` · ${careers.join(" | ")}` : ""}` };
+    const offerType = query.search?.trim() ? offerTypeForCareers(careers) : row.offerType ?? "";
+    return { ...row, baseTrainingType: `${offerType}${careers.length ? ` · ${careers.join(" | ")}` : ""}` };
   });
+  const departmentCount = new Set(sourceRows.map((row) => normalizeForMatch(row.department)).filter(Boolean)).size;
+  const managementKinds = sourceRows.map((row) => managementMarkerKind(row.management));
   logPdfStage("mapa-institucional", "carga de datos", { records: rows.length });
   return {
     body: await createMapInstitutionsPdf(rows, {
@@ -79,6 +84,10 @@ export async function createMapPdfReport(query: MapQuery): Promise<GeneratedRepo
       located: dataset.located.length, unlocated: dataset.unlocated.length, map,
       mode: query.view,
       offerColumnLabel: query.search?.trim() ? "Oferta coincidente" : "Tipo de oferta / carreras",
+      searchTitle: query.view === "offer" ? query.search?.trim() : undefined,
+      departmentCount,
+      stateCount: managementKinds.filter((kind) => kind === "state").length,
+      privateCount: managementKinds.filter((kind) => kind === "private").length,
     }),
     contentType: "application/pdf", filename: `sies_mapa_${query.view === "offer" ? "oferta_2026" : "institucional"}_${dateStamp()}.pdf`,
   };

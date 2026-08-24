@@ -148,14 +148,18 @@ export function createInstitutionsPdf(rows: InstitutionDirectoryItem[], metadata
 
 export function createMapInstitutionsPdf(
   rows: InstitutionDirectoryItem[],
-  metadata: { filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap; mode?: "institutions" | "offer"; offerColumnLabel?: string },
+  metadata: {
+    filters: string[]; total: number; located: number; unlocated: number; map: StaticInstitutionMap;
+    mode?: "institutions" | "offer"; offerColumnLabel?: string; searchTitle?: string;
+    departmentCount?: number; stateCount?: number; privateCount?: number;
+  },
 ): Promise<Buffer> {
   return collectPdf("mapa-institucional", (doc) => {
     const columns = metadata.mode === "offer" ? MAP_OFFER_COLUMNS : LIST_COLUMNS;
     const drawMap = (y: number) => {
       const { map } = metadata;
       const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-      const scale = Math.min(availableWidth / map.viewport.width, 360 / map.viewport.height, 1);
+      const scale = Math.min(availableWidth / map.viewport.width, 390 / map.viewport.height, 1);
       const displayWidth = map.viewport.width * scale;
       const displayHeight = map.viewport.height * scale;
       const x = doc.page.margins.left + (availableWidth - displayWidth) / 2;
@@ -191,13 +195,37 @@ export function createMapInstitutionsPdf(
     };
     function pageHeader(first: boolean): number {
       let y = brandHeader(doc, !first);
-      doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text(metadata.mode === "offer" ? "SIES · Mapa de oferta 2026" : "SIES · Mapa institucional", doc.page.margins.left, y);
-      y += first ? 27 : 20;
+      const searchedOffer = first && metadata.mode === "offer" && Boolean(metadata.searchTitle?.trim());
+      const searchTitle = metadata.searchTitle?.trim().toLocaleLowerCase("es-AR") ?? "";
+      const formattedSearchTitle = searchTitle ? `${searchTitle[0].toLocaleUpperCase("es-AR")}${searchTitle.slice(1)}` : "";
+      const genericTitle = metadata.mode === "offer" ? "SIES · Mapa de oferta 2026" : "SIES · Mapa institucional";
+      doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11)
+        .text(searchedOffer ? `Oferta 2026 · ${formattedSearchTitle}` : genericTitle, doc.page.margins.left, y);
+      y += first ? 24 : 20;
       if (first) {
-        doc.font(PDF_FONT_REGULAR).fillColor(MUTED).fontSize(8)
-          .text(`Fecha de generación: ${reportDate()}   |   ${metadata.mode === "offer" ? "Unidades de dictado" : "Instituciones"}: ${metadata.total}   |   ${metadata.mode === "offer" ? "Unidades ubicadas" : "Ubicadas"}: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
-          .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
-        y += 35;
+        if (searchedOffer) {
+          const departments = metadata.departmentCount ?? 0;
+          const departmentLabel = departments === 1 ? "departamento" : "departamentos";
+          doc.font(PDF_FONT_BOLD).fillColor(TURQUOISE).fontSize(10)
+            .text(`${metadata.total} unidades de dictado en ${departments} ${departmentLabel}`, doc.page.margins.left, y);
+          y += 16;
+          doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(8.5)
+            .text(`${metadata.total} unidades · ${metadata.stateCount ?? 0} estatales / ${metadata.privateCount ?? 0} privadas · ${departments} ${departmentLabel}`, doc.page.margins.left, y);
+          y += 15;
+          doc.font(PDF_FONT_REGULAR).fillColor(MUTED).fontSize(7.3)
+            .text(
+              `Fecha de generación: ${reportDate()}   ·   Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`,
+              doc.page.margins.left,
+              y,
+              { width: doc.page.width - 68 },
+            );
+          y += 17;
+        } else {
+          doc.font(PDF_FONT_REGULAR).fillColor(MUTED).fontSize(8)
+            .text(`Fecha de generación: ${reportDate()}   |   ${metadata.mode === "offer" ? "Unidades de dictado" : "Instituciones"}: ${metadata.total}   |   ${metadata.mode === "offer" ? "Unidades ubicadas" : "Ubicadas"}: ${metadata.located}   |   Sin coordenadas: ${metadata.unlocated}`, doc.page.margins.left, y)
+            .text(`Filtros aplicados: ${metadata.filters.length ? metadata.filters.join(" · ") : "Sin filtros"}`, doc.page.margins.left, y + 13, { width: doc.page.width - 68 });
+          y += 35;
+        }
         y = drawMap(y);
         if (y + 66 > doc.page.height - 48) {
           doc.addPage({ size: "A4", layout: "landscape", margins: { top: 18, bottom: 42, left: 34, right: 34 } });

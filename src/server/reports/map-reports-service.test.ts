@@ -63,7 +63,7 @@ describe("reportes filtrados del mapa", () => {
       total: 1, located: 1, unlocated: 0,
       map: expect.objectContaining({ attribution: "OpenStreetMap" }),
     }));
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: false });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 800, height: 480, cluster: false });
   });
 
   it("exporta la vista de oferta con el dataset y columnas académicas filtradas", async () => {
@@ -89,19 +89,23 @@ describe("reportes filtrados del mapa", () => {
   it("desactiva clustering, ordena territorialmente y limita la oferta coincidente en el PDF", async () => {
     getGeographicOffers.mockResolvedValue(dataset([
       { ...institution("sur", "3", "Unidad Sur"), mapMode: "offer", responsibleInstitution: "IES Sur", offerType: "Docente", department: "RÍO CHICO", locality: "SANTA ANA", careers: ["Profesorado de Matemática", "Profesorado de Inglés"], matchedCareers: ["Profesorado de Matemática"] },
-      { ...institution("capital", "2", "Unidad Capital"), mapMode: "offer", responsibleInstitution: "IES Capital", offerType: "Docente", department: "CAPITAL", locality: "SAN MIGUEL", careers: ["Profesorado de Matemática"], matchedCareers: ["Profesorado de Matemática"] },
+      { ...institution("capital", "2", "Unidad Capital"), mapMode: "offer", responsibleInstitution: "IES Capital", offerType: "Mixta", department: "CAPITAL", locality: "SAN MIGUEL", careers: ["Profesorado de Matemática"], matchedCareers: ["Profesorado de Matemática"] },
     ]));
     await createMapPdfReport({ view: "offer", search: "matematica" });
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: false });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 800, height: 480, cluster: false });
     const [rows, metadata] = createMapInstitutionsPdf.mock.calls.at(-1) as unknown as [LocatedInstitution[], { mode: string; offerColumnLabel: string; total: number }];
     expect(rows.map((row: LocatedInstitution) => row.name)).toEqual(["Unidad Capital", "Unidad Sur"]);
+    expect(rows[0].baseTrainingType).toBe("Docente · Profesorado de Matemática");
     expect(rows[1].baseTrainingType).toContain("Profesorado de Matemática"); expect(rows[1].baseTrainingType).not.toContain("Profesorado de Inglés");
-    expect(metadata).toMatchObject({ mode: "offer", offerColumnLabel: "Oferta coincidente", total: 2 });
+    expect(metadata).toMatchObject({
+      mode: "offer", offerColumnLabel: "Oferta coincidente", total: 2,
+      searchTitle: "matematica", departmentCount: 2, stateCount: 2, privateCount: 0,
+    });
   });
 
   it("mantiene clustering en PDF cuando el conjunto filtrado supera 25 unidades", async () => {
     getGeographicInstitutions.mockResolvedValue(dataset(Array.from({ length: 26 }, (_, index) => institution(String(index), String(index), `Institución ${index}`))));
     await createMapPdfReport({ view: "institutions" });
-    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 480, height: 480, cluster: true });
+    expect(createStaticInstitutionMap).toHaveBeenCalledWith(expect.any(Array), { width: 800, height: 480, cluster: true });
   });
 });

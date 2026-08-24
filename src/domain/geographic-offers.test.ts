@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { careersForGeographicOffer, createGeographicOfferRows, filterGeographicOffers, mapQueryFromParams, offerTypeCategory, sortGeographicOffersTerritorially } from "./geographic-offers";
+import { careersForGeographicOffer, createGeographicOfferRows, filterGeographicOffers, mapQueryFromParams, offerTypeCategory, offerTypeForCareers, sortGeographicOffersTerritorially } from "./geographic-offers";
 
 const row = (overrides: Record<string, string> = {}) => ({
   cue_anexo: "900034000", cui: "900034000", nombre_establecimiento: "IES AGUILARES", nombre_sede_oferta: "EXT. ÁULICA SANTA ANA - IES AGUILARES",
@@ -27,6 +27,12 @@ describe("mapa de oferta 2026", () => {
     const offer = createGeographicOfferRows([row()], "ingles")[0];
     expect(careersForGeographicOffer(offer, "INGLÉS")).toEqual(["PROFESORADO DE INGLÉS"]);
     expect(careersForGeographicOffer(offer)).toHaveLength(2);
+  });
+
+  it("clasifica el tipo desde las carreras coincidentes", () => {
+    expect(offerTypeForCareers(["PROFESOR DE EDUCACIÓN SECUNDARIA EN MATEMÁTICA"])).toBe("Docente");
+    expect(offerTypeForCareers(["TECNICATURA SUPERIOR EN SOFTWARE"])).toBe("Técnica");
+    expect(offerTypeForCareers(["PROFESORADO DE INGLÉS", "TÉCNICO SUPERIOR EN TURISMO"])).toBe("Mixta");
   });
 
   it("ordena territorialmente por departamento, localidad y unidad", () => {

@@ -121,6 +121,19 @@ export function careersForGeographicOffer(
   return normalizeForMatch(search) ? offer.matchedCareers : offer.careers;
 }
 
+export function offerTypeForCareers(careers: string[]): string {
+  const types = new Set<string>();
+  for (const career of careers) {
+    const normalized = normalizeForMatch(career);
+    let categorized = false;
+    if (normalized.includes("PROFESOR")) { types.add("Docente"); categorized = true; }
+    if (normalized.includes("TECNIC")) { types.add("Técnica"); categorized = true; }
+    if (!categorized && normalized) types.add("Otras");
+  }
+  if (types.size > 1) return "Mixta";
+  return [...types][0] ?? "";
+}
+
 export function sortGeographicOffersTerritorially<T extends Pick<GeographicOfferItem, "department" | "locality" | "name">>(rows: T[]): T[] {
   return [...rows].sort((a, b) => compareText(a.department, b.department) || compareText(a.locality, b.locality) || compareText(a.name, b.name));
 }
