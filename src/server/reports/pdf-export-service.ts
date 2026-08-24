@@ -8,7 +8,7 @@ import type { AuthorityDirectoryItem } from "@/domain/authorities-directory";
 import type { HierarchicalOfferBlock } from "@/server/services/list-reports-service";
 import type { StaticInstitutionMap } from "@/server/services/static-map-service";
 import { NO_DATA, type InstitutionDirectoryItem, type InstitutionView } from "@/domain/institutions";
-import { MANAGEMENT_MARKER_COLORS, managementMarkerKind } from "@/domain/map-marker-style";
+import { MANAGEMENT_MARKER_COLORS, clusterMarkerColor, managementMarkerKind } from "@/domain/map-marker-style";
 import { reportDate } from "./report-utils";
 
 const BLUE = "#155FA4";
@@ -151,8 +151,9 @@ export function createMapInstitutionsPdf(
       for (const cluster of map.clusters) {
         const markerX = x + cluster.x; const markerY = y + cluster.y;
         if (cluster.items.length > 1) {
-          doc.circle(markerX, markerY, 14).fillAndStroke("#FFFFFF", MUTED).lineWidth(3);
-          doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(8).text(String(cluster.items.length), markerX - 12, markerY - 4, { width: 24, align: "center" });
+          const color = clusterMarkerColor(cluster.items.map((item) => item.management));
+          doc.circle(markerX, markerY, 14).fillAndStroke(color, "#FFFFFF").lineWidth(3);
+          doc.font(PDF_FONT_BOLD).fillColor("#FFFFFF").fontSize(8).text(String(cluster.items.length), markerX - 12, markerY - 4, { width: 24, align: "center" });
         } else {
           const color = MANAGEMENT_MARKER_COLORS[managementMarkerKind(cluster.items[0].management)];
           doc.circle(markerX, markerY, 7).fillAndStroke(color, "#FFFFFF").lineWidth(2);

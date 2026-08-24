@@ -10,6 +10,7 @@ it("el popup conserva el tipo de sede", () => {
     latitude: -26.8, longitude: -65.2,
   }} />);
   expect(html).toContain("Tipo de sede"); expect(html).toContain("Extensión Áulica");
+  expect(html).toContain("background-color:#0B4F8A");
 });
 
 it("el popup de oferta muestra datos académicos y destaca la carrera buscada", () => {
@@ -20,4 +21,5 @@ it("el popup de oferta muestra datos académicos y destaca la carrera buscada", 
     matchedCareers: ["Desarrollo de Software"], enrollment: "100", entrants: "25", graduates: "5", referenceYear: "2026",
   }} />);
   expect(html).toContain("Institución responsable"); expect(html).toContain("Carreras vigentes"); expect(html).toContain("<mark>Desarrollo de Software</mark>"); expect(html).toContain("Matrícula 2026");
+  expect(html).toContain("background-color:#0B4F8A");
 });

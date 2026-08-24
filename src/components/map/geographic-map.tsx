@@ -5,7 +5,7 @@ import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { TUCUMAN_CENTER, type LocatedInstitution } from "@/domain/geography";
-import { managementMarkerKind } from "@/domain/map-marker-style";
+import { MANAGEMENT_MARKER_COLORS, clusterMarkerColor, managementMarkerKind } from "@/domain/map-marker-style";
 import { getMapViewportStrategy } from "@/domain/map-viewport";
 import { MapPopupContent } from "./map-popup-content";
 
@@ -17,13 +17,24 @@ function markerIcon(management: string): L.DivIcon {
   if (cached) return cached;
   const icon = L.divIcon({
     className: `sies-map-marker marker-${kind}`,
-    html: "<span></span>",
+    html: `<span style="background:${MANAGEMENT_MARKER_COLORS[kind]}"></span>`,
     iconSize: [24, 32],
     iconAnchor: [12, 31],
     popupAnchor: [0, -28],
   });
   iconCache.set(kind, icon);
   return icon;
+}
+
+function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
+  const count = cluster.getChildCount();
+  const color = clusterMarkerColor(cluster.getAllChildMarkers().map((marker) => marker.options.title));
+  const size = count < 10 ? 38 : count < 100 ? 44 : 50;
+  return L.divIcon({
+    className: "sies-map-cluster",
+    html: `<div style="background:${color}"><span>${count}</span></div>`,
+    iconSize: [size, size],
+  });
 }
 
 function FitFilteredBounds({ institutions, singleMarker }: { institutions: LocatedInstitution[]; singleMarker: React.RefObject<L.Marker | null> }) {
@@ -58,6 +69,7 @@ function InstitutionMarker({ institution, markerRef }: { institution: LocatedIns
       ref={markerRef}
       position={[institution.latitude, institution.longitude]}
       icon={markerIcon(institution.management)}
+      title={institution.management || "Sin dato"}
       eventHandlers={{
         click: (event) => {
           const marker = event.target as L.Marker;
@@ -83,7 +95,7 @@ export default function GeographicMap({ institutions }: { institutions: LocatedI
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitFilteredBounds institutions={institutions} singleMarker={singleMarker} />
-      <MarkerClusterGroup chunkedLoading maxClusterRadius={48} showCoverageOnHover={false} zoomToBoundsOnClick spiderfyOnMaxZoom>
+      <MarkerClusterGroup chunkedLoading iconCreateFunction={clusterIcon} maxClusterRadius={48} showCoverageOnHover={false} zoomToBoundsOnClick spiderfyOnMaxZoom>
         {institutions.map((institution) => (
           <InstitutionMarker
             key={institution.id}
