@@ -1,6 +1,6 @@
 import "server-only";
 
-import { filterAndSortAcademicOffers, type AcademicOfferQuery } from "@/domain/academic-offer";
+import { filterAndSortAcademicOffers, summarizeAcademicOffers, type AcademicOfferQuery } from "@/domain/academic-offer";
 import { getAcademicOfferDataset } from "@/server/services/academic-offer-service";
 import { createExcelCsv } from "./csv-export-service";
 import { createAcademicOffersPdf, logPdfStage } from "./pdf-export-service";
@@ -41,7 +41,11 @@ export async function createAcademicOffersPdfReport(query: AcademicOfferQuery): 
   const rows = filterAndSortAcademicOffers(dataset.offers, query);
   logPdfStage("oferta-academica", "carga de datos", { records: rows.length });
   return {
-    body: await createAcademicOffersPdf(rows, { year: dataset.referenceYear, filters: appliedOfferFilters(query) }),
+    body: await createAcademicOffersPdf(rows, {
+      year: dataset.referenceYear,
+      filters: appliedOfferFilters(query),
+      summary: summarizeAcademicOffers(rows),
+    }),
     contentType: "application/pdf",
     filename: `oferta_academica_sies${filenameSuffix(query)}_${dateStamp()}.pdf`,
   };

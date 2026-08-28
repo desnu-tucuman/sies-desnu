@@ -6,6 +6,7 @@ import {
   filterCareersByConsolidatedYear,
   NoConsolidatedAcademicDataError,
   requireConsolidatedReferenceYear,
+  summarizeAcademicOffers,
   requireConsolidatedAcademicRows,
   queryAcademicOffers,
 } from "./academic-offer";
@@ -51,5 +52,23 @@ describe("año consolidado de Oferta Académica", () => {
     expect(result.total).toBe(7);
     expect(result.pageCount).toBe(2);
     expect(result.items).toHaveLength(2);
+  });
+
+  it("resume el mismo universo filtrado sin confundir registros con ofertas", () => {
+    const offers = createAcademicOfferRows([
+      { cue_anexo: "1", cui: "CUI-1", titulo: "Profesorado de Matemática", nombre_sede_oferta: "IES Capital", localidad_oferta: "SAN MIGUEL", departamento_oferta: "CAPITAL", gestion: "PRIVADA", matricula_total: "100", ingresantes: "30", egresados: "10" },
+      { cue_anexo: "1", cui: "CUI-1", titulo: "PROFESORADO DE MATEMATICA", nombre_sede_oferta: "IES Capital", localidad_oferta: "SAN MIGUEL", departamento_oferta: "CAPITAL", gestion: "PRIVADA", matricula_total: "40", ingresantes: "12", egresados: "4" },
+      { cue_anexo: "2", titulo: "Profesorado de Matemática", nombre_sede_oferta: "IES Sur", localidad_oferta: "CONCEPCIÓN", departamento_oferta: "CHICLIGASTA", gestion: "ESTATAL", matricula_total: "80", ingresantes: "20", egresados: "8" },
+      { cue_anexo: "2", titulo: "Tecnicatura Superior en Software", nombre_sede_oferta: "IES Sur", localidad_oferta: "CONCEPCIÓN", departamento_oferta: "CHICLIGASTA", gestion: "ESTATAL", matricula_total: "1.200", ingresantes: "200", egresados: "50" },
+    ], "2026");
+
+    expect(summarizeAcademicOffers(offers)).toEqual({
+      institutions: 2, offers: 3, careers: 2,
+      enrollment: 1420, entrants: 262, graduates: 72,
+    });
+    expect(queryAcademicOffers(offers, { search: "matematica", management: "privada", department: "capital" }).summary).toEqual({
+      institutions: 1, offers: 1, careers: 1,
+      enrollment: 140, entrants: 42, graduates: 14,
+    });
   });
 });

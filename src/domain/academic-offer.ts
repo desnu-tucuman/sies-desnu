@@ -4,6 +4,7 @@ import { compareText, normalizeForMatch, safeText, type QueryParameterSource } f
 export interface AcademicOfferItem {
   id: string;
   cue: string;
+  cui: string;
   title: string;
   institution: string;
   management: string;
@@ -16,6 +17,15 @@ export interface AcademicOfferItem {
   entrants: string;
   graduates: string;
   referenceYear: string;
+}
+
+export interface AcademicOfferSummary {
+  institutions: number;
+  offers: number;
+  careers: number;
+  enrollment: number;
+  entrants: number;
+  graduates: number;
 }
 
 export interface AcademicOfferQuery {
@@ -36,6 +46,7 @@ export interface AcademicOfferQuery {
 export interface AcademicOfferQueryResult {
   items: AcademicOfferItem[];
   total: number;
+  summary: AcademicOfferSummary;
   page: number;
   pageCount: number;
   filters: Record<"institution" | "management" | "department" | "locality" | "careerType" | "trainingType" | "careerStatus", string[]>;
@@ -87,6 +98,7 @@ export function createAcademicOfferRows(rows: SheetRow[], referenceYear: string)
   return rows.map((row, index) => ({
     id: Buffer.from(JSON.stringify([row.cue_anexo, row.titulo, row.nombre_sede_oferta, index]), "utf8").toString("base64url"),
     cue: safeText(row.cue_anexo),
+    cui: safeText(row.cui),
     title: safeText(row.titulo),
     institution: safeText(row.nombre_sede_oferta || row.nombre_establecimiento),
     management: safeText(row.gestion),
@@ -100,6 +112,46 @@ export function createAcademicOfferRows(rows: SheetRow[], referenceYear: string)
     graduates: safeText(row.egresados),
     referenceYear,
   }));
+}
+
+function academicMetricNumber(value: string): number {
+  const parsed = Number(safeText(value).replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function summarizeAcademicOffers(offers: AcademicOfferItem[]): AcademicOfferSummary {
+  const institutions = new Set<string>();
+  const careers = new Set<string>();
+  const uniqueOffers = new Set<string>();
+  let enrollment = 0;
+  let entrants = 0;
+  let graduates = 0;
+
+  for (const offer of offers) {
+    const cue = normalizeForMatch(offer.cue);
+    const cui = normalizeForMatch(offer.cui);
+    const title = normalizeForMatch(offer.title);
+    const institution = normalizeForMatch(offer.institution);
+    const locality = normalizeForMatch(offer.locality);
+    if (cue) institutions.add(cue);
+    if (title) careers.add(title);
+    if (title) {
+      const unitKey = cui || [cue, institution, locality].join("|");
+      if (unitKey.replaceAll("|", "")) uniqueOffers.add(`${unitKey}|${title}`);
+    }
+    enrollment += academicMetricNumber(offer.enrollment);
+    entrants += academicMetricNumber(offer.entrants);
+    graduates += academicMetricNumber(offer.graduates);
+  }
+
+  return {
+    institutions: institutions.size,
+    offers: uniqueOffers.size,
+    careers: careers.size,
+    enrollment,
+    entrants,
+    graduates,
+  };
 }
 
 export function academicOfferQueryFromParams(params: QueryParameterSource): AcademicOfferQuery {
@@ -148,7 +200,8 @@ export function queryAcademicOffers(offers: AcademicOfferItem[], query: Academic
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(Math.max(Number.isFinite(query.page) ? Number(query.page) : 1, 1), pageCount);
   return {
-    items: filtered.slice((page - 1) * pageSize, page * pageSize), total: filtered.length, page, pageCount,
+    items: filtered.slice((page - 1) * pageSize, page * pageSize), total: filtered.length,
+    summary: summarizeAcademicOffers(filtered), page, pageCount,
     filters: {
       institution: distinct(offers, "institution"), management: distinct(offers, "management"),
       department: distinct(offers, "department"), locality: distinct(offers, "locality"),

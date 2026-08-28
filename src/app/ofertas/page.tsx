@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DataValue, EmptyState, SourceError } from "@/components/ui";
-import { academicOfferQueryFromParams, queryAcademicOffers, type AcademicOfferQuery } from "@/domain/academic-offer";
+import { academicOfferQueryFromParams, queryAcademicOffers, type AcademicOfferQuery, type AcademicOfferSummary } from "@/domain/academic-offer";
 import { getAcademicOfferDataset } from "@/server/services/academic-offer-service";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,21 @@ function SortLink({ label, field, params }: { label: string; field: NonNullable<
   const current = one(params.sort); const currentDirection = one(params.direction);
   const direction = current === field && currentDirection !== "desc" ? "desc" : "asc";
   return <Link className="sortLink" href={urlWith(params, { sort: field, direction, page: 1 })}>{label}{current === field ? <span aria-label={currentDirection === "desc" ? "descendente" : "ascendente"}>{currentDirection === "desc" ? " ↓" : " ↑"}</span> : null}</Link>;
+}
+
+const SUMMARY_ITEMS: Array<[keyof AcademicOfferSummary, string]> = [
+  ["institutions", "Instituciones"], ["offers", "Ofertas"], ["careers", "Carreras"],
+  ["enrollment", "Matrícula"], ["entrants", "Ingresantes"], ["graduates", "Egresados"],
+];
+const numberFormatter = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
+
+function OfferQuerySummary({ summary }: { summary: AcademicOfferSummary }) {
+  return <section className="offerQuerySummary" aria-labelledby="offer-query-summary-title">
+    <h2 id="offer-query-summary-title">Resumen de la consulta</h2>
+    <div className="offerSummaryGrid">
+      {SUMMARY_ITEMS.map(([key, label]) => <article key={key}><span>{label}</span><strong>{numberFormatter.format(summary[key])}</strong></article>)}
+    </div>
+  </section>;
 }
 
 export default async function AcademicOffersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -51,7 +66,8 @@ export default async function AcademicOffersPage({ searchParams }: { searchParam
         <div className="filterActions"><button type="submit">Aplicar filtros</button><Link href="/ofertas">Limpiar filtros</Link></div>
       </form>
 
-      <div className="resultToolbar"><div className="resultSummary" aria-live="polite"><strong>{result.total}</strong> resultados</div><div className="downloadActions"><Link href={`/api/export/ofertas/csv${exportSuffix}`}>↓ Descargar CSV</Link><Link href={`/api/export/ofertas/pdf${exportSuffix}`}>↓ Descargar PDF</Link></div></div>
+      <OfferQuerySummary summary={result.summary} />
+      <div className="resultToolbar"><div className="resultSummary" aria-live="polite"><strong>{numberFormatter.format(result.total)}</strong> registros estadísticos · <strong>{numberFormatter.format(result.summary.offers)}</strong> ofertas académicas</div><div className="downloadActions"><Link href={`/api/export/ofertas/csv${exportSuffix}`}>↓ Descargar CSV</Link><Link href={`/api/export/ofertas/pdf${exportSuffix}`}>↓ Descargar PDF</Link></div></div>
       {!result.items.length ? <EmptyState>No se encontraron carreras con los filtros seleccionados.</EmptyState> : <>
         <div className="tableScroll"><table className="offerTable"><thead><tr>
           <th><SortLink label="Título" field="title" params={params} /></th><th><SortLink label="Institución o sede" field="institution" params={params} /></th>

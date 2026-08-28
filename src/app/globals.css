@@ -276,6 +276,12 @@ tbody tr:hover { background: #f1f9fa; }
 .mapMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 26px 0 16px; }
 .referenceCaption { color: var(--blue); font-weight: 600; }
 .offerFilters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.offerQuerySummary { margin-top: 24px; }
+.offerQuerySummary h2 { margin: 0 0 12px; color: var(--dark-blue); font-size: 1.08rem; }
+.offerSummaryGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.offerSummaryGrid article { min-width: 0; padding: 14px 15px; border: 1px solid var(--line); border-top: 4px solid var(--turquoise); border-radius: 10px; background: white; }
+.offerSummaryGrid span { display: block; overflow: hidden; color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .02em; text-overflow: ellipsis; text-transform: uppercase; }
+.offerSummaryGrid strong { display: block; margin-top: 5px; color: var(--blue); font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1; }
 .offerTable { min-width: 1320px; }
 .offerTable th:nth-last-child(-n+3), .offerTable td:nth-last-child(-n+3) { text-align: right; }
 .authorityFilters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -343,6 +349,9 @@ tbody tr:hover { background: #f1f9fa; }
 .unlocatedPanel .tableScroll { border: 0; border-top: 1px solid var(--line); border-radius: 0; }
 .unlocatedEmpty { margin: 0; padding: 22px; color: var(--muted); border-top: 1px solid var(--line); }
 
+@media (max-width: 1100px) {
+  .offerSummaryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 760px) {
   .shell { padding: 24px 0; }
   .metrics { grid-template-columns: 1fr 1fr; }
@@ -384,4 +393,5 @@ tbody tr:hover { background: #f1f9fa; }
   .respondsFloating { right: 10px; bottom: 10px; }
   .respondsFloatingButton { min-height: 44px; padding: 9px 13px; font-size: .82rem; }
   .messageHistory > div:last-child { height: 64px; }
+  .offerSummaryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

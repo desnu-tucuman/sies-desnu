@@ -3,7 +3,7 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import PDFDocument from "pdfkit";
-import type { AcademicOfferItem } from "@/domain/academic-offer";
+import type { AcademicOfferItem, AcademicOfferSummary } from "@/domain/academic-offer";
 import type { AuthorityDirectoryItem } from "@/domain/authorities-directory";
 import type { HierarchicalOfferBlock } from "@/server/services/list-reports-service";
 import type { StaticInstitutionMap } from "@/server/services/static-map-service";
@@ -305,7 +305,26 @@ function offerTableHeader(doc: PDFKit.PDFDocument, y: number): number {
   return y + 25;
 }
 
-function offerPageHeader(doc: PDFKit.PDFDocument, first: boolean, metadata: { year: string; filters: string[]; count: number }): number {
+const OFFER_SUMMARY_ITEMS: Array<[keyof AcademicOfferSummary, string]> = [
+  ["institutions", "Instituciones"], ["offers", "Ofertas"], ["careers", "Carreras"],
+  ["enrollment", "Matrícula"], ["entrants", "Ingresantes"], ["graduates", "Egresados"],
+];
+const offerSummaryFormatter = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
+
+function drawOfferSummary(doc: PDFKit.PDFDocument, y: number, summary: AcademicOfferSummary): number {
+  const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const gap = 6;
+  const cardWidth = (availableWidth - gap * (OFFER_SUMMARY_ITEMS.length - 1)) / OFFER_SUMMARY_ITEMS.length;
+  OFFER_SUMMARY_ITEMS.forEach(([key, label], index) => {
+    const x = doc.page.margins.left + index * (cardWidth + gap);
+    doc.roundedRect(x, y, cardWidth, 34, 4).fillAndStroke("#F7FAFB", LINE);
+    doc.font(PDF_FONT_BOLD).fillColor(MUTED).fontSize(5.8).text(label.toLocaleUpperCase("es-AR"), x + 7, y + 6, { width: cardWidth - 14 });
+    doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(12).text(offerSummaryFormatter.format(summary[key]), x + 7, y + 16, { width: cardWidth - 14 });
+  });
+  return y + 42;
+}
+
+function offerPageHeader(doc: PDFKit.PDFDocument, first: boolean, metadata: { year: string; filters: string[]; count: number; summary: AcademicOfferSummary }): number {
   let y = brandHeader(doc, !first);
   doc.font(PDF_FONT_BOLD).fillColor(DARK_BLUE).fontSize(first ? 17 : 11).text("Listado de oferta académica", doc.page.margins.left, y);
   y += first ? 27 : 20;
@@ -315,11 +334,12 @@ function offerPageHeader(doc: PDFKit.PDFDocument, first: boolean, metadata: { ye
       .text(`Fecha de generación: ${reportDate()}   |   Año de referencia: ${metadata.year}   |   Registros: ${metadata.count}`, doc.page.margins.left, y)
       .text(`Filtros aplicados: ${filters}`, doc.page.margins.left, y + 13, { width: doc.page.width - doc.page.margins.left - doc.page.margins.right });
     y += 35;
+    y = drawOfferSummary(doc, y, metadata.summary);
   }
   return offerTableHeader(doc, y);
 }
 
-export function createAcademicOffersPdf(rows: AcademicOfferItem[], metadata: { year: string; filters: string[] }): Promise<Buffer> {
+export function createAcademicOffersPdf(rows: AcademicOfferItem[], metadata: { year: string; filters: string[]; summary: AcademicOfferSummary }): Promise<Buffer> {
   return collectPdf("oferta-academica", (doc) => {
     let y = offerPageHeader(doc, true, { ...metadata, count: rows.length });
     rows.forEach((row, index) => {

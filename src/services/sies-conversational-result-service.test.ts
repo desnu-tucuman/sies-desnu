@@ -4,7 +4,7 @@ import { interpretSiesConversationalQuery } from "./sies-conversational-query-in
 import { resolveOfferConversation } from "./sies-conversational-result-service";
 
 const offer = (overrides: Partial<AcademicOfferItem>): AcademicOfferItem => ({
-  id: "1", cue: "1", title: "PROFESORADO DE INGLÉS", institution: "IES CAPITAL", management: "ESTATAL",
+  id: "1", cue: "1", cui: "1", title: "PROFESORADO DE INGLÉS", institution: "IES CAPITAL", management: "ESTATAL",
   locality: "SAN MIGUEL DE TUCUMÁN", department: "CAPITAL", careerType: "PROFESORADO", trainingType: "DOCENTE",
   careerStatus: "ACTIVA", enrollment: "10", entrants: "2", graduates: "1", referenceYear: "2025", ...overrides,
 });
